@@ -133,18 +133,29 @@
   .lever-note { font-size:13.5px; color:var(--muted); margin:22px 0 0; max-width:34em; line-height:1.75; }
   .lever-note b { color:var(--ink); font-weight:400; }
 
-  /* ---------- CYCLE STRIP ---------- */
-  .cycle { display:flex; align-items:stretch; gap:0; flex-wrap:wrap; }
-  .node { flex:1 1 150px; min-width:0; padding:20px 16px 22px; position:relative; border-radius:10px; }
-  .node::after { content:"→"; position:absolute; right:-7px; top:50%; transform:translateY(-50%); color:var(--faint); font-size:15px; z-index:2; }
-  .node:nth-child(4)::after { content:"↻"; color:var(--amber); }
+  /* ---------- CYCLE ---------- */
+  .cycle-wrap { max-width:820px; }
+  .loop { display:flex; align-items:stretch; gap:0; }
+  .node { flex:1 1 0; min-width:0; padding:20px 16px 22px; position:relative; border-radius:10px; }
+  .node::after { content:"→"; position:absolute; right:-7px; top:42px; color:var(--faint); font-size:15px; z-index:2; }
   .node:last-child::after { content:""; }
   .node .dot { width:9px; height:9px; border-radius:50%; background:var(--nc); box-shadow:0 0 0 4px color-mix(in srgb,var(--nc) 20%, transparent); }
   .node .nn { font-family:var(--serif); font-size:clamp(18px,2.8vw,23px); margin:14px 0 2px; }
   .node .ne { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
   .node .nd { font-size:12px; color:var(--ink-soft); line-height:1.55; margin-top:9px; }
-  .node.hab { opacity:.92; }
-  .node.hab .nn { color:var(--h); }
+  .loopback { display:flex; align-items:center; gap:8px; justify-content:flex-end;
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--h); margin:12px 6px 0; }
+  .loopback .rot { font-size:16px; }
+  .hab { display:flex; gap:16px; align-items:center; margin-top:14px; padding:20px 22px;
+    border:1px solid color-mix(in srgb, var(--h) 38%, var(--hair)); border-radius:12px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--h) 9%, transparent), transparent); }
+  .hab-badge { font-family:var(--serif); font-size:24px; color:var(--h); flex:none;
+    width:54px; height:54px; display:grid; place-items:center; border-radius:10px;
+    border:1px solid color-mix(in srgb, var(--h) 45%, transparent); }
+  .hab-name { font-family:var(--serif); font-size:clamp(19px,3vw,23px); color:var(--h); }
+  .hab-name span { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-left:10px; }
+  .hab-desc { font-size:13px; color:var(--ink-soft); line-height:1.7; margin-top:5px; }
+  .hab-desc b { color:var(--h); font-weight:400; }
 
   /* ---------- CLOSING ---------- */
   .closing { text-align:center; border-top:1px solid var(--hair); }
@@ -161,9 +172,11 @@
   }
   @media (max-width:560px) {
     .wrap { padding:0 16px; }
-    .cycle { gap:6px; }
+    .loop { flex-wrap:wrap; gap:6px; }
     .node { flex-basis:calc(50% - 3px); }
-    .node::after, .node:nth-child(4)::after { content:""; }
+    .node::after { content:""; }
+    .hab { gap:12px; padding:16px; }
+    .hab-badge { width:46px; height:46px; font-size:20px; }
     .rung { grid-template-columns:1fr auto; gap:8px 12px; }
     .rung .rk { grid-column:1/-1; width:auto; }
   }
@@ -330,12 +343,21 @@
   <section id="cycle">
     <p class="sec-eye">The Cycle</p>
     <h2>触れて、回復して、また<em>触れる</em></h2>
-    <div class="cycle">
-      <div class="node" style="--nc:var(--e)"><span class="dot"></span><div class="nn">暴露</div><div class="ne">Exposure</div><div class="nd">ストレッサーに触れる</div></div>
-      <div class="node" style="--nc:var(--r)"><span class="dot"></span><div class="nn">応答</div><div class="ne">Response</div><div class="nd">HPA軸が活性化しピークへ</div></div>
-      <div class="node" style="--nc:var(--c)"><span class="dot"></span><div class="nn">クリアランス</div><div class="ne">Clearance</div><div class="nd">肝代謝＋腎濾過で排出</div></div>
-      <div class="node" style="--nc:var(--v)"><span class="dot"></span><div class="nn">回復</div><div class="ne">Recovery</div><div class="nd">分泌停止・ベースライン復帰</div></div>
-      <div class="node hab" style="--nc:var(--h)"><span class="dot"></span><div class="nn">馴化</div><div class="ne">Habituation</div><div class="nd">反復で応答振幅が下がる</div></div>
+    <div class="cycle-wrap">
+      <div class="loop">
+        <div class="node" style="--nc:var(--e)"><span class="dot"></span><div class="nn">暴露</div><div class="ne">Exposure</div><div class="nd">ストレッサーに触れる</div></div>
+        <div class="node" style="--nc:var(--r)"><span class="dot"></span><div class="nn">応答</div><div class="ne">Response</div><div class="nd">HPA軸が活性化しピークへ</div></div>
+        <div class="node" style="--nc:var(--c)"><span class="dot"></span><div class="nn">クリアランス</div><div class="ne">Clearance</div><div class="nd">肝代謝＋腎濾過で排出</div></div>
+        <div class="node" style="--nc:var(--v)"><span class="dot"></span><div class="nn">回復</div><div class="ne">Recovery</div><div class="nd">分泌停止・ベースライン復帰</div></div>
+      </div>
+      <div class="loopback"><span class="rot">↻</span> 一周して、また暴露へ</div>
+      <div class="hab">
+        <div class="hab-badge">馴</div>
+        <div>
+          <div class="hab-name">馴化 <span>Habituation</span></div>
+          <div class="hab-desc">馴化はどれか一相ではない。<b>この一周を繰り返すほど、同じストレッサーへの応答振幅が下がっていく</b> ── サイクル全体を回し続けた結果として現れる適応。</div>
+        </div>
+      </div>
     </div>
   </section>
 
