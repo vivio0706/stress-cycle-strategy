@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stress Cycle Strategy</title>
+<style>
+  :root {
+    --bg:#0a0d11;
+    --panel:#111820; --panel-2:#0e141b;
+    --ink:#ece6d8; --ink-soft:#cfc7b3; --muted:#9b917c; --faint:#6a7078;
+    --amber:#d4a574;
+    --hair:rgba(212,165,116,.16); --hair-2:rgba(212,165,116,.28);
+    --e:#e05555;  /* 暴露   Exposure */
+    --r:#e4c85c;  /* 応答   Response */
+    --c:#4ea3a0;  /* クリアランス Clearance */
+    --v:#5fb3d0;  /* 回復   Recovery */
+    --h:#b09bd0;  /* 馴化   Habituation */
+    --serif:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",Georgia,"Times New Roman",serif;
+    --sans:"Yu Gothic UI","Hiragino Kaku Gothic ProN","Noto Sans JP","Meiryo",system-ui,sans-serif;
+    --mono:"Cascadia Code","SF Mono","JetBrains Mono","Consolas",ui-monospace,monospace;
+    --maxw:1080px;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    background-image:radial-gradient(ellipse at 50% -8%, #1a212b 0%, #0a0d11 62%);
+    font-family:var(--sans); line-height:1.8; font-feature-settings:"palt" 1;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 22px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:rgba(212,165,116,.6); margin:0; }
+
+  /* ---------- HERO ---------- */
+  .hero { padding: clamp(60px,11vw,140px) 0 clamp(30px,5vw,54px); }
+  .hero h1 {
+    font-family:var(--serif); font-weight:400;
+    font-size:clamp(44px,11vw,104px); line-height:.94; letter-spacing:.005em;
+    margin:20px 0 0; text-wrap:balance;
+  }
+  .hero h1 em { font-style:italic; color:var(--amber); }
+  .hero .thesis {
+    font-family:var(--serif); font-size:clamp(17px,3vw,26px); font-weight:400;
+    color:var(--ink-soft); margin:26px 0 0; max-width:22em; line-height:1.6; text-wrap:balance;
+  }
+  .hero .thesis b { color:var(--amber); font-weight:400; font-style:italic; }
+
+  /* ---------- INTERACTIVE HPA CONSOLE ---------- */
+  .journey { margin: clamp(24px,4vw,44px) 0; }
+  .jrn-head { border-bottom:1px solid var(--hair); padding-bottom:16px; margin-bottom:22px;
+    display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .jrn-head .t { font-family:var(--serif); font-weight:400; font-size:clamp(19px,3.2vw,28px); margin:6px 0 0; letter-spacing:.01em; }
+  .jrn-head .t .accent { color:var(--amber); font-style:italic; }
+  .jrn-count { font-family:var(--mono); font-size:12px; color:rgba(212,165,116,.6); font-variant-numeric:tabular-nums; }
+
+  .jrn-grid { display:grid; grid-template-columns:minmax(0,380px) 1fr; gap:clamp(18px,3vw,44px); align-items:start; }
+  .jrn-figure svg { width:100%; height:auto; display:block; max-height:640px; }
+  .jrn-info { min-width:0; display:flex; flex-direction:column; }
+  .jrn-phase { font-family:var(--mono); font-size:11px; letter-spacing:.24em; margin-bottom:12px; }
+  .jrn-info h3 { font-family:var(--serif); font-weight:400; font-size:clamp(23px,3.6vw,33px); line-height:1.15; margin:0 0 4px; color:#f4ede0; text-wrap:balance; }
+  .jrn-en { font-family:var(--mono); font-size:12.5px; letter-spacing:.03em; font-style:italic; color:var(--muted); margin-bottom:18px; }
+  .jrn-short { font-size:clamp(14px,1.8vw,16px); line-height:1.8; color:var(--ink-soft); margin:0 0 22px; }
+  .jrn-detail { border-top:1px solid var(--hair); }
+  .jrn-row { display:grid; grid-template-columns:112px 1fr; gap:14px; padding:12px 0; border-bottom:1px solid var(--hair); }
+  .jrn-row .k { font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding-top:2px; }
+  .jrn-row .v { font-size:13.5px; color:var(--ink); line-height:1.5; }
+  .jrn-block { margin-top:22px; padding:16px 18px; border-radius:8px; }
+  .jrn-block .bk { font-family:var(--mono); font-size:10.5px; letter-spacing:.2em; margin-bottom:10px; }
+  .jrn-block .comp { display:flex; justify-content:space-between; gap:14px; font-size:13px; color:var(--ink-soft); padding:3px 0; }
+  .jrn-block .comp .mono { font-family:var(--mono); }
+  .jrn-block .cascade { font-size:13px; line-height:1.9; color:var(--ink-soft); }
+
+  .jrn-ctl { margin-top:28px; padding-top:20px; border-top:1px solid var(--hair); }
+  .jrn-btns { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .jbtn { display:grid; place-items:center; width:40px; height:40px; border-radius:7px; cursor:pointer;
+    background:transparent; border:1px solid var(--hair-2); color:var(--amber); transition:background .18s ease, opacity .18s ease; }
+  .jbtn:hover { background:rgba(212,165,116,.10); }
+  .jbtn:disabled { opacity:.26; cursor:default; }
+  .jbtn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .jbtn.reset { margin-left:auto; }
+  .jrn-time { display:flex; flex-direction:column; gap:1px; }
+  .jt-row { display:flex; align-items:center; gap:12px; width:100%; background:transparent; border:0; cursor:pointer;
+    padding:6px; border-radius:6px; text-align:left; transition:background .16s ease; }
+  .jt-row:hover { background:rgba(212,165,116,.06); }
+  .jt-num { font-family:var(--mono); font-size:10px; letter-spacing:.1em; width:22px; color:var(--faint); font-variant-numeric:tabular-nums; }
+  .jt-line { flex:1; height:1px; background:rgba(120,128,136,.28); }
+  .jt-name { font-family:var(--serif); font-size:13px; color:var(--faint); flex-shrink:0; }
+  .jt-row.on .jt-name { color:#f4ede0; }
+  .jrn-hint { font-family:var(--mono); font-size:10px; letter-spacing:.05em; color:var(--faint); margin:14px 0 0; }
+
+  .jrn-foot { margin-top:24px; padding-top:16px; border-top:1px solid var(--hair); }
+  .jrn-foot .bk { font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+  .jrn-foot p { font-size:13px; line-height:1.75; color:var(--muted); margin:0; }
+  .jrn-foot .teal { color:var(--c); }
+
+  /* svg organ states */
+  .organ { color:#4a5058; }
+  .organ.on { color:var(--oc,var(--amber)); }
+  .organ .glow { fill:var(--oc,var(--amber)); opacity:0; transition:opacity .4s ease; }
+  .organ.on .glow { opacity:.42; }
+  .organ .core { fill:currentColor; transition:fill .3s ease; }
+  .organ.on .core { animation:glowPulse 2.3s ease-in-out infinite; }
+  .organ .lab-ja { fill:#6a7078; font-size:11px; transition:fill .3s ease; }
+  .organ.on .lab-ja { fill:currentColor; }
+  .organ .lab-en { fill:#5a6068; font-size:8px; font-family:var(--mono); }
+  .organ .lead { stroke:#4a5058; stroke-width:.5; }
+  .fill-organ .core { fill:#2a2f38; stroke:currentColor; stroke-width:1.2; opacity:.45; transition:fill .3s ease, opacity .3s ease; }
+  .fill-organ.on .core { fill:currentColor; opacity:.85; }
+  @keyframes glowPulse { 0%,100%{filter:drop-shadow(0 0 4px currentColor);} 50%{filter:drop-shadow(0 0 13px currentColor);} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+  .fade-in { animation:fadeIn .5s ease-out; }
+  .flow-dash { stroke-dasharray:2 3; opacity:.4; animation:shimmer 2s ease-in-out infinite; }
+  @keyframes shimmer { 0%,100%{opacity:.25;} 50%{opacity:.8;} }
+
+  /* ---------- LEVER LADDER ---------- */
+  section { padding: clamp(40px,7vw,80px) 0; border-top:1px solid var(--hair); }
+  .sec-eye { font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin:0 0 14px; }
+  h2 { font-family:var(--serif); font-weight:400; font-size:clamp(26px,5vw,46px); line-height:1.1; margin:0 0 30px; letter-spacing:.01em; text-wrap:balance; }
+  h2 em { font-style:italic; color:var(--amber); }
+
+  .ladder { display:grid; gap:1px; max-width:680px; }
+  .rung { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
+    padding:18px 4px; border-bottom:1px solid var(--hair); }
+  .rung .rk { font-family:var(--mono); font-size:11px; letter-spacing:.12em; color:var(--faint); width:64px; }
+  .rung .rn { font-family:var(--serif); font-size:clamp(17px,2.6vw,21px); }
+  .rung .rn small { display:block; font-family:var(--sans); font-size:11.5px; color:var(--muted); margin-top:2px; letter-spacing:0; }
+  .tag { font-family:var(--mono); font-size:11px; letter-spacing:.04em; padding:5px 11px; border-radius:999px; white-space:nowrap; border:1px solid transparent; }
+  .tag.dim { color:var(--faint); border-color:rgba(120,128,136,.3); }
+  .tag.mid { color:var(--r); border-color:rgba(228,200,92,.35); background:rgba(228,200,92,.07); }
+  .rung.key { border-bottom:0; margin-top:8px; padding-top:24px; border-top:1px solid var(--hair-2); }
+  .rung.key .rn { color:var(--amber); font-style:italic; font-size:clamp(20px,3.4vw,28px); }
+  .tag.hot { color:#0a0d11; background:var(--amber); border-color:var(--amber); font-weight:600; }
+  .lever-note { font-size:13.5px; color:var(--muted); margin:22px 0 0; max-width:34em; line-height:1.75; }
+  .lever-note b { color:var(--ink); font-weight:400; }
+
+  /* ---------- CYCLE STRIP ---------- */
+  .cycle { display:flex; align-items:stretch; gap:0; flex-wrap:wrap; }
+  .node { flex:1 1 150px; min-width:0; padding:20px 16px 22px; position:relative; border-radius:10px; }
+  .node::after { content:"→"; position:absolute; right:-7px; top:50%; transform:translateY(-50%); color:var(--faint); font-size:15px; z-index:2; }
+  .node:nth-child(4)::after { content:"↻"; color:var(--amber); }
+  .node:last-child::after { content:""; }
+  .node .dot { width:9px; height:9px; border-radius:50%; background:var(--nc); box-shadow:0 0 0 4px color-mix(in srgb,var(--nc) 20%, transparent); }
+  .node .nn { font-family:var(--serif); font-size:clamp(18px,2.8vw,23px); margin:14px 0 2px; }
+  .node .ne { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .node .nd { font-size:12px; color:var(--ink-soft); line-height:1.55; margin-top:9px; }
+  .node.hab { opacity:.92; }
+  .node.hab .nn { color:var(--h); }
+
+  /* ---------- CLOSING ---------- */
+  .closing { text-align:center; border-top:1px solid var(--hair); }
+  .closing blockquote { font-family:var(--serif); font-weight:400; margin:0 auto; max-width:16em;
+    font-size:clamp(26px,6vw,52px); line-height:1.35; letter-spacing:.01em; text-wrap:balance; }
+  .closing em { font-style:italic; color:var(--amber); }
+  .closing .sig { font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin-top:30px; }
+
+  @media (prefers-reduced-motion: reduce) { *{animation:none!important;transition:none!important;scroll-behavior:auto;} }
+
+  @media (max-width:860px) {
+    .jrn-grid { grid-template-columns:1fr; gap:10px; }
+    .jrn-figure { max-width:380px; margin:0 auto; width:100%; }
+  }
+  @media (max-width:560px) {
+    .wrap { padding:0 16px; }
+    .cycle { gap:6px; }
+    .node { flex-basis:calc(50% - 3px); }
+    .node::after, .node:nth-child(4)::after { content:""; }
+    .rung { grid-template-columns:1fr auto; gap:8px 12px; }
+    .rung .rk { grid-column:1/-1; width:auto; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <p class="eyebrow">馴化のフレームワーク</p>
+    <h1>Stress<br>Cycle<br><em>Strategy</em></h1>
+    <p class="thesis">ストレスは消す対象ではなく、サイクルで回す対象。<b>適応速度の律速は、回復速度である。</b></p>
+  </header>
+
+  <!-- INTERACTIVE HPA CONSOLE -->
+  <section class="journey" id="journey" aria-label="HPA軸を通るコルチゾールの旅路（インタラクティブ）" style="border-top:0; padding-top:0;">
+    <div class="jrn-head">
+      <div>
+        <p class="eyebrow">HPA AXIS · CORTISOL FLOW</p>
+        <div class="t">コルチゾールの<span class="accent">旅路</span></div>
+      </div>
+      <div class="jrn-count"><span id="jCur">00</span> / 08</div>
+    </div>
+
+    <div class="jrn-grid">
+      <div class="jrn-figure">
+        <svg id="bodySvg" viewBox="0 0 400 720" role="img" aria-label="視床下部・下垂体・副腎・肝臓・腎臓・膀胱を通るコルチゾールの流れ">
+          <defs>
+            <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2a2f38" stop-opacity=".4"/>
+              <stop offset="100%" stop-color="#1a1f26" stop-opacity=".2"/>
+            </linearGradient>
+            <radialGradient id="organGlow" cx="50%" cy="50%">
+              <stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>
+              <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <path d="M 200 30 C 235 30,255 55,255 95 C 255 120,248 135,240 150 L 240 180 C 285 195,310 225,310 275 L 310 410 C 310 450,295 480,285 510 L 285 595 C 285 625,275 660,260 690 M 140 150 C 115 195,90 225,90 275 L 90 410 C 90 450,105 480,115 510 L 115 595 C 115 625,125 660,140 690 M 160 150 L 240 150"
+                fill="url(#bodyGrad)" stroke="#3a4048" stroke-width="1" opacity=".5"/>
+          <ellipse cx="200" cy="80" rx="55" ry="65" fill="none" stroke="#3a4048" stroke-width="1" opacity=".5"/>
+          <path d="M 165 65 Q 175 45,200 50 Q 225 45,235 65 Q 240 85,225 100 L 175 100 Q 160 85,165 65 Z" fill="none" stroke="#3a4048" stroke-width=".5" opacity=".4"/>
+
+          <g id="feedbackLayer" opacity="0" style="display:none">
+            <path d="M 200 295 Q 130 220,180 108" fill="none" stroke="#d4a574" stroke-width="1.2" stroke-dasharray="3 3"/>
+            <path d="M 200 295 Q 270 210,215 128" fill="none" stroke="#d4a574" stroke-width="1.2" stroke-dasharray="3 3"/>
+            <polygon points="180,108 184,116 176,114" fill="#d4a574"/>
+            <polygon points="215,128 212,120 220,124" fill="#d4a574"/>
+            <text x="120" y="200" fill="#d4a574" font-size="9" opacity=".85" style="font-family:var(--mono)">(−) feedback</text>
+          </g>
+          <g id="boltLayer" style="display:none" transform="translate(200,25)">
+            <path d="M -8 -20 L 4 -20 L -2 -5 L 10 -5 L -4 15 L 2 0 L -10 0 Z" fill="#e05555" stroke="#ff7070" stroke-width="1" style="filter:drop-shadow(0 0 8px #e05555)"/>
+            <text x="0" y="30" text-anchor="middle" fill="#e05555" font-size="10" style="font-family:var(--mono)">STRESSOR</text>
+          </g>
+          <g id="flowLayer"></g>
+          <g id="scatterLayer" style="display:none"></g>
+
+          <g class="organ" data-organ="hypo" style="--oc:#d94a5c">
+            <circle class="glow" cx="200" cy="92" r="18"/>
+            <circle class="core" cx="200" cy="92" r="6"/>
+            <line class="lead" x1="214" y1="92" x2="320" y2="92"/>
+            <text class="lab-ja" x="325" y="93">視床下部</text>
+            <text class="lab-en" x="325" y="105">Hypothalamus</text>
+          </g>
+          <g class="organ" data-organ="pit" style="--oc:#e08c3a">
+            <line class="lead" x1="200" y1="98" x2="200" y2="123" stroke-width="1"/>
+            <circle class="glow" cx="200" cy="128" r="14"/>
+            <ellipse class="core" cx="200" cy="128" rx="5" ry="4"/>
+            <line class="lead" x1="210" y1="128" x2="320" y2="128"/>
+            <text class="lab-ja" x="325" y="129">下垂体</text>
+            <text class="lab-en" x="325" y="141">Pituitary</text>
+          </g>
+          <g class="organ" data-organ="adrenal" style="--oc:#e4c85c">
+            <circle class="glow" cx="158" cy="368" r="20"/>
+            <path class="core" d="M 150 368 Q 158 361,166 368 L 164 370 Q 158 364,152 370 Z"/>
+            <line class="lead" x1="148" y1="368" x2="30" y2="368"/>
+            <text class="lab-ja" x="25" y="369" text-anchor="end">副腎</text>
+            <text class="lab-en" x="25" y="381" text-anchor="end">Adrenal</text>
+          </g>
+          <g class="organ fill-organ" data-organ="liver" style="--oc:#4ea3a0">
+            <ellipse class="glow" cx="258" cy="322" rx="35" ry="22"/>
+            <path class="core" d="M 233 312 Q 258 304,286 317 Q 288 332,268 337 Q 238 334,233 312 Z"/>
+            <line class="lead" x1="288" y1="322" x2="370" y2="322"/>
+            <text class="lab-ja" x="375" y="323">肝臓</text>
+            <text class="lab-en" x="375" y="335">Liver</text>
+          </g>
+          <g class="organ fill-organ" data-organ="kidney" style="--oc:#5fb3d0">
+            <circle class="glow" cx="158" cy="410" r="22"/>
+            <path class="core" d="M 146 395 Q 163 393,168 405 Q 170 422,153 425 Q 143 420,146 395 Z"/>
+            <line class="lead" x1="143" y1="410" x2="30" y2="410"/>
+            <text class="lab-ja" x="25" y="411" text-anchor="end">腎臓</text>
+            <text class="lab-en" x="25" y="423" text-anchor="end">Kidney</text>
+          </g>
+          <g class="organ fill-organ" data-organ="bladder" style="--oc:#5fb3d0">
+            <circle class="glow" cx="200" cy="560" r="22"/>
+            <ellipse class="core" cx="200" cy="560" rx="20" ry="15"/>
+            <line class="lead" x1="222" y1="560" x2="370" y2="560"/>
+            <text class="lab-ja" x="375" y="561">膀胱</text>
+            <text class="lab-en" x="375" y="573">Bladder → 尿</text>
+          </g>
+          <g class="organ" data-organ="circulation" style="--oc:#e4c85c">
+            <circle class="glow" cx="200" cy="300" r="14"/>
+            <circle class="core" cx="200" cy="300" r="4" style="display:none"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="jrn-info">
+        <div id="jStage">
+          <div class="jrn-phase" id="jPhase">PHASE 00</div>
+          <h3 id="jTitle">待機</h3>
+          <div class="jrn-en" id="jEn">Baseline</div>
+          <p class="jrn-short" id="jShort"></p>
+          <div class="jrn-detail" id="jDetail"></div>
+          <div id="jBlock"></div>
+        </div>
+        <div class="jrn-ctl">
+          <div class="jrn-btns">
+            <button class="jbtn" id="btnPrev" aria-label="前へ"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button class="jbtn" id="btnPlay" aria-label="再生"><svg id="playIcon" viewBox="0 0 24 24"></svg></button>
+            <button class="jbtn" id="btnNext" aria-label="次へ"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+            <button class="jbtn reset" id="btnReset" aria-label="最初に戻す"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+          </div>
+          <div class="jrn-time" id="jTimeline"></div>
+          <p class="jrn-hint">▶ 再生 · 各行クリックでジャンプ · ← → キー</p>
+        </div>
+        <div class="jrn-foot">
+          <div class="bk">Key insight</div>
+          <p>脂溶性のコルチゾールはそのまま尿に出せない。<span class="teal">肝臓で還元→抱合</span>し水溶性にした代謝物が腎で濾過され尿へ。未変換の遊離コルチゾール(UFC)は約1%。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEVER -->
+  <section id="lever">
+    <p class="sec-eye">The Lever</p>
+    <h2>レバーは<em>一本</em></h2>
+    <div class="ladder">
+      <div class="rung">
+        <span class="rk">上流</span>
+        <span class="rn">脅威判定<small>Threat appraisal</small></span>
+        <span class="tag dim">経験依存</span>
+      </div>
+      <div class="rung">
+        <span class="rk">中流</span>
+        <span class="rn">応答振幅<small>Response amplitude</small></span>
+        <span class="tag mid">最適化可</span>
+      </div>
+      <div class="rung">
+        <span class="rk">下流</span>
+        <span class="rn">クリアランス<small>Clearance · 半減期60–90分</small></span>
+        <span class="tag dim">定数 · レバー無</span>
+      </div>
+      <div class="rung key">
+        <span class="rk">━</span>
+        <span class="rn">回復速度<small>Recovery velocity</small></span>
+        <span class="tag hot">唯一のレバー</span>
+      </div>
+    </div>
+    <p class="lever-note">下流は速められない。「発散」の正体は分泌停止＋自然減衰であって、処理の高速化ではない。<b>回復速度だけが、生理出力の低減と次に触れる間隔の短縮を同時に動かす。</b></p>
+  </section>
+
+  <!-- CYCLE -->
+  <section id="cycle">
+    <p class="sec-eye">The Cycle</p>
+    <h2>触れて、回復して、また<em>触れる</em></h2>
+    <div class="cycle">
+      <div class="node" style="--nc:var(--e)"><span class="dot"></span><div class="nn">暴露</div><div class="ne">Exposure</div><div class="nd">ストレッサーに触れる</div></div>
+      <div class="node" style="--nc:var(--r)"><span class="dot"></span><div class="nn">応答</div><div class="ne">Response</div><div class="nd">HPA軸が活性化しピークへ</div></div>
+      <div class="node" style="--nc:var(--c)"><span class="dot"></span><div class="nn">クリアランス</div><div class="ne">Clearance</div><div class="nd">肝代謝＋腎濾過で排出</div></div>
+      <div class="node" style="--nc:var(--v)"><span class="dot"></span><div class="nn">回復</div><div class="ne">Recovery</div><div class="nd">分泌停止・ベースライン復帰</div></div>
+      <div class="node hab" style="--nc:var(--h)"><span class="dot"></span><div class="nn">馴化</div><div class="ne">Habituation</div><div class="nd">反復で応答振幅が下がる</div></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="closing">
+  <div class="wrap" style="padding-top:clamp(56px,10vw,110px); padding-bottom:clamp(56px,10vw,110px);">
+    <blockquote>触れて、回復して、<br>また<em>触れる</em>。</blockquote>
+    <p class="sig">Stress Cycle Strategy</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var STAGES = [
+    { ja:'待機', en:'Baseline', phase:'PHASE 00', color:'#5a6470',
+      short:'外部刺激なし。基礎分泌のみ（日内変動あり）。',
+      detail:[['基礎分泌','朝 > 夜（概日リズム）'],['血中半減期','60–90 min'],['結合状態','CBG結合 ~90% / 遊離 ~10%']],
+      active:[], flow:null },
+    { ja:'ストレス知覚', en:'Stressor Perceived', phase:'PHASE 01', color:'#e05555',
+      short:'心理・身体ストレッサーが扁桃体経由で視床下部へ入力。',
+      detail:[['入力経路','扁桃体 → 室傍核 (PVN)'],['種類','心理的 / 身体的 / 炎症性'],['時間','秒〜分']],
+      active:[], flow:null, bolt:true },
+    { ja:'視床下部 → CRH', en:'Hypothalamus releases CRH', phase:'PHASE 02', color:'#d94a5c',
+      short:'視床下部室傍核からCRHが下垂体門脈へ。',
+      detail:[['物質','CRH (41 aa)'],['経路','下垂体門脈系'],['半減期','約 4 分']],
+      active:['hypo','pit'], flow:{from:'hypo',to:'pit',color:'#d94a5c'} },
+    { ja:'下垂体 → ACTH', en:'Pituitary releases ACTH', phase:'PHASE 03', color:'#e08c3a',
+      short:'下垂体前葉がPOMC由来のACTHを全身循環へ。',
+      detail:[['物質','ACTH (39 aa, POMC由来)'],['経路','全身循環 → 副腎皮質'],['受容体','MC2R']],
+      active:['pit','adrenal'], flow:{from:'pit',to:'adrenal',color:'#e08c3a'} },
+    { ja:'副腎 → コルチゾール', en:'Adrenal releases Cortisol', phase:'PHASE 04', color:'#e4c85c',
+      short:'副腎皮質束状帯でコレステロールから合成、血中へ。',
+      detail:[['合成部位','束状帯 (zona fasciculata)'],['前駆体','コレステロール'],['日産生','約 10–20 mg/日']],
+      active:['adrenal','circulation'], flow:{from:'adrenal',to:'circulation',color:'#e4c85c'} },
+    { ja:'標的作用 + 負のfeedback', en:'Target Action + Feedback', phase:'PHASE 05', color:'#e4c85c',
+      short:'糖新生↑ / 抗炎症 / 免疫抑制。同時に視床下部・下垂体を抑制。',
+      detail:[['代謝','糖新生・異化・脂肪分解'],['免疫','抗炎症・免疫抑制'],['feedback','視床下部 / 下垂体を抑制']],
+      active:['circulation','hypo','pit','adrenal'], flow:null, feedback:true, scatter:true },
+    { ja:'肝臓で代謝', en:'Hepatic Metabolism', phase:'PHASE 06', color:'#4ea3a0',
+      short:'A環還元 → 抱合。水溶性代謝物に変換（排出のキー）。',
+      detail:[['酵素①','11β-HSD1: コルチゾン ⇌ コルチゾール'],['酵素②','5α/5β-reductase → THF, THE'],['抱合','グルクロン酸 / 硫酸抱合']],
+      active:['circulation','liver'], flow:{from:'circulation',to:'liver',color:'#e4c85c',toColor:'#4ea3a0'}, block:'metabolic' },
+    { ja:'腎臓で濾過', en:'Renal Filtration', phase:'PHASE 07', color:'#5fb3d0',
+      short:'水溶性の抱合代謝物が糸球体で濾過される。',
+      detail:[['濾過','糸球体 (水溶性代謝物)'],['11β-HSD2','コルチゾール→コルチゾン (MR保護)'],['再吸収','抱合体はほぼ無し']],
+      active:['liver','kidney'], flow:{from:'liver',to:'kidney',color:'#4ea3a0'} },
+    { ja:'尿として排出', en:'Urinary Excretion', phase:'PHASE 08', color:'#5fb3d0',
+      short:'大半は抱合代謝物、約1%は遊離コルチゾールとして尿中へ。',
+      detail:[['主要代謝物','THF, 5α-THF, THE (抱合体)'],['UFC','遊離 ~1% (診断指標)'],['その他','胆汁 → 腸肝循環']],
+      active:['kidney','bladder'], flow:{from:'kidney',to:'bladder',color:'#5fb3d0'}, block:'urinary' }
+  ];
+
+  var FLOW_PATHS = {
+    'hypo-pit':'M 200 98 L 200 124',
+    'pit-adrenal':'M 200 134 Q 178 240, 162 360',
+    'adrenal-circulation':'M 158 362 Q 180 330, 198 305',
+    'circulation-liver':'M 204 305 Q 230 310, 254 320',
+    'liver-kidney':'M 254 332 Q 210 370, 164 408',
+    'kidney-bladder':'M 158 420 Q 180 490, 198 555'
+  };
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var stage = 0, playing = false, timer = null;
+  var svg = document.getElementById('bodySvg');
+  var organs = {};
+  Array.prototype.forEach.call(svg.querySelectorAll('.organ'), function (g) { organs[g.getAttribute('data-organ')] = g; });
+  var flowLayer = document.getElementById('flowLayer');
+  var scatterLayer = document.getElementById('scatterLayer');
+  var feedbackLayer = document.getElementById('feedbackLayer');
+  var boltLayer = document.getElementById('boltLayer');
+  var el = {
+    cur:document.getElementById('jCur'), phase:document.getElementById('jPhase'),
+    title:document.getElementById('jTitle'), en:document.getElementById('jEn'),
+    short:document.getElementById('jShort'), detail:document.getElementById('jDetail'),
+    block:document.getElementById('jBlock'), timeline:document.getElementById('jTimeline'),
+    playIcon:document.getElementById('playIcon'), stage:document.getElementById('jStage')
+  };
+
+  STAGES.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.className = 'jt-row'; b.setAttribute('data-i', i);
+    b.innerHTML = '<span class="jt-num">' + pad(i) + '</span><span class="jt-line"></span><span class="jt-name">' + s.ja + '</span>';
+    b.addEventListener('click', function () { pause(); go(i); });
+    el.timeline.appendChild(b);
+  });
+  var timeRows = Array.prototype.slice.call(el.timeline.querySelectorAll('.jt-row'));
+
+  function pad(n){ return (n<10?'0':'') + n; }
+  function clearFlow(){ while (flowLayer.firstChild) flowLayer.removeChild(flowLayer.firstChild); }
+  function clearScatter(){ while (scatterLayer.firstChild) scatterLayer.removeChild(scatterLayer.firstChild); scatterLayer.style.display='none'; }
+
+  function renderFlow(flow){
+    clearFlow();
+    if (!flow) return;
+    var d = FLOW_PATHS[flow.from + '-' + flow.to];
+    if (!d) return;
+    var guide = document.createElementNS(SVGNS,'path');
+    guide.setAttribute('d', d); guide.setAttribute('fill','none');
+    guide.setAttribute('stroke', flow.color); guide.setAttribute('stroke-width','1');
+    guide.setAttribute('class','flow-dash');
+    flowLayer.appendChild(guide);
+    if (reduce) return;
+    for (var i=0;i<6;i++){
+      var c = document.createElementNS(SVGNS,'circle');
+      c.setAttribute('r','3'); c.setAttribute('fill', flow.color);
+      var am = document.createElementNS(SVGNS,'animateMotion');
+      am.setAttribute('dur','2.8s'); am.setAttribute('repeatCount','indefinite');
+      am.setAttribute('begin', (i*0.45)+'s'); am.setAttribute('path', d);
+      c.appendChild(am);
+      var op = document.createElementNS(SVGNS,'animate');
+      op.setAttribute('attributeName','opacity'); op.setAttribute('values','0;1;0.9;0');
+      op.setAttribute('keyTimes','0;0.3;0.7;1');
+      op.setAttribute('dur','2.8s'); op.setAttribute('repeatCount','indefinite'); op.setAttribute('begin',(i*0.45)+'s');
+      c.appendChild(op);
+      if (flow.toColor){
+        var cf = document.createElementNS(SVGNS,'animate');
+        cf.setAttribute('attributeName','fill'); cf.setAttribute('values', flow.color+';'+flow.color+';'+flow.toColor);
+        cf.setAttribute('keyTimes','0;0.55;1'); cf.setAttribute('dur','2.8s'); cf.setAttribute('repeatCount','indefinite'); cf.setAttribute('begin',(i*0.45)+'s');
+        c.appendChild(cf);
+      }
+      flowLayer.appendChild(c);
+    }
+  }
+  function renderScatter(){
+    clearScatter();
+    if (reduce) return;
+    scatterLayer.style.display='';
+    for (var i=0;i<12;i++){
+      var ang = (i/12)*Math.PI*2, r = 66;
+      var cx = 200 + Math.cos(ang)*r, cy = 320 + Math.sin(ang)*r*0.7;
+      var c = document.createElementNS(SVGNS,'circle');
+      c.setAttribute('cx',cx.toFixed(1)); c.setAttribute('cy',cy.toFixed(1)); c.setAttribute('r','2');
+      c.setAttribute('fill','#e4c85c'); c.setAttribute('opacity','0.5');
+      var a = document.createElementNS(SVGNS,'animate');
+      a.setAttribute('attributeName','opacity'); a.setAttribute('values','0.15;0.7;0.15');
+      a.setAttribute('dur','2.4s'); a.setAttribute('repeatCount','indefinite'); a.setAttribute('begin',(i*0.18)+'s');
+      c.appendChild(a);
+      scatterLayer.appendChild(c);
+    }
+  }
+  function renderBlock(type){
+    if (type === 'metabolic'){
+      el.block.innerHTML = '<div class="jrn-block fade-in" style="background:rgba(78,163,160,.07);border:1px solid rgba(78,163,160,.22)"><div class="bk" style="color:#4ea3a0">METABOLIC CASCADE</div><div class="cascade">コルチゾール → A環還元 (THF, THE) → <span style="color:#4ea3a0">グルクロン酸抱合 → 水溶性</span></div></div>';
+    } else if (type === 'urinary'){
+      el.block.innerHTML = '<div class="jrn-block fade-in" style="background:rgba(95,179,208,.07);border:1px solid rgba(95,179,208,.22)"><div class="bk" style="color:#5fb3d0">URINARY COMPOSITION</div><div class="comp"><span>抱合代謝物</span><span class="mono" style="color:#5fb3d0">~ 95%</span></div><div class="comp"><span>遊離コルチゾール (UFC)</span><span class="mono" style="color:#5fb3d0">~ 1%</span></div></div>';
+    } else { el.block.innerHTML = ''; }
+  }
+
+  function go(i){
+    stage = Math.max(0, Math.min(STAGES.length-1, i));
+    var s = STAGES[stage];
+    for (var k in organs) organs[k].classList.toggle('on', s.active.indexOf(k) !== -1);
+    var circ = organs.circulation.querySelector('.core');
+    if (circ) circ.style.display = s.active.indexOf('circulation') !== -1 ? '' : 'none';
+    feedbackLayer.style.display = s.feedback ? '' : 'none';
+    feedbackLayer.setAttribute('opacity', s.feedback ? '0.8' : '0');
+    boltLayer.style.display = s.bolt ? '' : 'none';
+    if (s.scatter) renderScatter(); else clearScatter();
+    renderFlow(s.flow);
+    el.stage.classList.remove('fade-in'); void el.stage.offsetWidth; el.stage.classList.add('fade-in');
+    el.cur.textContent = pad(stage);
+    el.phase.textContent = s.phase; el.phase.style.color = s.color;
+    el.title.textContent = s.ja; el.en.textContent = s.en; el.short.textContent = s.short;
+    el.detail.innerHTML = s.detail.map(function(d){ return '<div class="jrn-row"><div class="k">'+d[0]+'</div><div class="v">'+d[1]+'</div></div>'; }).join('');
+    renderBlock(s.block);
+    timeRows.forEach(function(r,idx){
+      var on = idx === stage;
+      r.classList.toggle('on', on);
+      var line = r.querySelector('.jt-line'), num = r.querySelector('.jt-num');
+      line.style.background = on ? ('linear-gradient(to right,'+STAGES[idx].color+',transparent)') : 'rgba(120,128,136,.28)';
+      num.style.color = on ? STAGES[idx].color : '';
+    });
+    document.getElementById('btnPrev').disabled = stage === 0;
+    document.getElementById('btnNext').disabled = stage === STAGES.length-1;
+  }
+
+  function setPlayIcon(){
+    el.playIcon.innerHTML = playing ? '<rect x="6" y="5" width="4" height="14" fill="currentColor" stroke="none"></rect><rect x="14" y="5" width="4" height="14" fill="currentColor" stroke="none"></rect>' : '<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"></path>';
+  }
+  function play(){
+    if (stage >= STAGES.length-1) go(0);
+    playing = true; setPlayIcon(); clearInterval(timer);
+    timer = setInterval(function(){ if (stage < STAGES.length-1) go(stage+1); else pause(); }, 4200);
+  }
+  function pause(){ playing = false; setPlayIcon(); clearInterval(timer); }
+
+  document.getElementById('btnPlay').addEventListener('click', function(){ playing ? pause() : play(); });
+  document.getElementById('btnPrev').addEventListener('click', function(){ pause(); go(stage-1); });
+  document.getElementById('btnNext').addEventListener('click', function(){ pause(); go(stage+1); });
+  document.getElementById('btnReset').addEventListener('click', function(){ pause(); go(0); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight'){ pause(); go(stage+1); }
+    else if (e.key === 'ArrowLeft'){ pause(); go(stage-1); }
+    else if (e.key === ' ' && e.target === document.body){ e.preventDefault(); playing ? pause() : play(); }
+  });
+
+  setPlayIcon();
+  go(0);
+})();
+</script>
+
+</html>
