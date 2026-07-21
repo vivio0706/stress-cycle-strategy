@@ -2,7 +2,7 @@
 <html lang="ja">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stress Cycle Strategy</title>
+<title>馴化のフレームワーク</title>
 <style>
   :root {
     --bg:#0a0d11;
@@ -46,7 +46,7 @@
   .hero .thesis b { color:var(--amber); font-weight:400; font-style:italic; }
 
   /* ---------- INTERACTIVE HPA CONSOLE ---------- */
-  .journey { margin: clamp(24px,4vw,44px) 0; }
+  .journey { margin:0; }
   .jrn-head { border-bottom:1px solid var(--hair); padding-bottom:16px; margin-bottom:22px;
     display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
   .jrn-head .t { font-family:var(--serif); font-weight:400; font-size:clamp(19px,3.2vw,28px); margin:6px 0 0; letter-spacing:.01em; }
@@ -117,6 +117,8 @@
   .sec-eye { font-family:var(--mono); font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint); margin:0 0 14px; }
   h2 { font-family:var(--serif); font-weight:400; font-size:clamp(26px,5vw,46px); line-height:1.1; margin:0 0 30px; letter-spacing:.01em; text-wrap:balance; }
   h2 em { font-style:italic; color:var(--amber); }
+  .sec-lead { color:var(--ink-soft); font-size:clamp(14px,1.9vw,15.5px); line-height:1.75; max-width:34em; margin:-14px 0 26px; }
+  .sec-lead b { color:var(--amber); font-weight:400; }
 
   .ladder { display:grid; gap:1px; max-width:680px; }
   .rung { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:16px;
@@ -203,13 +205,66 @@
 
   <!-- HERO -->
   <header class="hero">
-    <p class="eyebrow">馴化のフレームワーク</p>
-    <h1>Stress<br>Cycle<br><em>Strategy</em></h1>
-    <p class="thesis">ストレスは消す対象ではなく、サイクルで回す対象。<b>適応速度の律速は、回復速度である。</b></p>
+    <p class="eyebrow">The Habituation Framework</p>
+    <h1>馴化の<br><span style="color:var(--amber)">フレームワーク</span></h1>
+    <p class="thesis">目的はひとつ。<b>最速で、コンフォートゾーンを広げる。</b>一歩だけ外へ出て、戻って回復する。その繰り返しだけ。</p>
   </header>
 
+  <!-- COMFORT ZONE -->
+  <section id="comfort">
+    <p class="sec-eye">01 · The Goal</p>
+    <h2>コンフォートゾーンを<em>最速で</em>広げる</h2>
+    <div class="cz cz-stage">
+      <div>
+        <div class="cz-fig">
+          <svg id="czSvg" viewBox="0 0 360 300" role="img" aria-label="コンフォートゾーンとデンジャーゾーン。サイクルを回すとコンフォートが広がる">
+            <circle cx="180" cy="150" r="132" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>
+            <circle id="czEdge" cx="180" cy="150" r="76" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>
+            <circle id="czComfort" cx="180" cy="150" r="50" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5"/>
+            <text x="180" y="32" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.15em">DANGER</text>
+            <g id="czMarker" style="transform:translate(0px,0px)">
+              <circle class="mk" cx="180" cy="150" r="7"/>
+              <text class="han" x="180" y="133" text-anchor="middle" fill="var(--h)" font-size="14" style="font-family:var(--serif)">馴</text>
+            </g>
+          </svg>
+        </div>
+        <div class="cz-legend">
+          <span><i style="background:var(--c)"></i>コンフォート</span>
+          <span><i style="background:var(--amber)"></i>一歩の外＝適応</span>
+          <span><i style="background:var(--e)"></i>デンジャー</span>
+        </div>
+      </div>
+      <div class="cz-panel">
+        <div class="cz-read">
+          <div class="cz-metric"><div class="l">サイクル</div><div class="n" id="czCycles">0</div></div>
+          <div class="cz-metric" style="flex:1"><div class="l">ゾーン拡張</div><div class="cz-bar"><i id="czBar"></i></div></div>
+        </div>
+        <div class="czmsg" id="czMsg">一歩だけ外へ出て、すぐ戻って回復する。それだけ。</div>
+        <div class="cz-btns">
+          <button class="czbtn primary" id="czStep">▶ 一歩 → 回復（1サイクル）</button>
+          <button class="czbtn" id="czStay">快適圏に留まる</button>
+          <button class="czbtn" id="czDive">危険圏に飛び込む</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CYCLE -->
+  <section id="cycle">
+    <p class="sec-eye">02 · One Cycle</p>
+    <h2>触れて、回復して、また<em>触れる</em></h2>
+    <p class="sec-lead">その「一歩→回復」は、生理的にはこの4相を<b>一周</b>すること。</p>
+    <div class="cycle-wrap">
+      <svg id="cycSvg" viewBox="0 0 440 380" role="img" aria-label="暴露→応答→クリアランス→回復の4相サイクル。一周を繰り返すと中心の馴化が深まる"></svg>
+      <p class="cyc-cap">4相を一周＝1サイクル。<b>回すほど、中心の馴化が深まる。</b></p>
+    </div>
+  </section>
+
   <!-- INTERACTIVE HPA CONSOLE -->
-  <section class="journey" id="journey" aria-label="HPA軸を通るコルチゾールの旅路（インタラクティブ）" style="border-top:0; padding-top:0;">
+  <section class="journey" id="journey" aria-label="HPA軸を通るコルチゾールの旅路（インタラクティブ）">
+    <p class="sec-eye">03 · The Physiology</p>
+    <h2>その一周で、体は<em>何をしているか</em></h2>
+    <p class="sec-lead">なぜ「回復」が律速なのか。一周とは、コルチゾールがHPA軸を巡って基準値へ戻るまでの、実際の過程。</p>
     <div class="jrn-head">
       <div>
         <p class="eyebrow">HPA AXIS · CORTISOL FLOW</p>
@@ -329,7 +384,7 @@
 
   <!-- LEVER -->
   <section id="lever">
-    <p class="sec-eye">The Lever</p>
+    <p class="sec-eye">04 · The Lever</p>
     <h2>レバーは<em>一本</em></h2>
     <div class="ladder">
       <div class="rung">
@@ -356,59 +411,11 @@
     <p class="lever-note">下流は速められない。「発散」の正体は分泌停止＋自然減衰であって、処理の高速化ではない。<b>回復速度だけが、生理出力の低減と次に触れる間隔の短縮を同時に動かす。</b></p>
   </section>
 
-  <!-- CYCLE -->
-  <section id="cycle">
-    <p class="sec-eye">The Cycle</p>
-    <h2>触れて、回復して、また<em>触れる</em></h2>
-    <div class="cycle-wrap">
-      <svg id="cycSvg" viewBox="0 0 440 380" role="img" aria-label="暴露→応答→クリアランス→回復の4相サイクル。一周を繰り返すと中心の馴化が深まる"></svg>
-      <p class="cyc-cap">4相を一周＝1サイクル。<b>回すほど、中心の馴化が深まる。</b></p>
-    </div>
-  </section>
-
-  <!-- COMFORT ZONE -->
-  <section id="comfort">
-    <p class="sec-eye">The Framework · 馴化のフレームワーク</p>
-    <h2>コンフォートゾーンを<em>広げる</em></h2>
-    <div class="cz cz-stage">
-      <div>
-        <div class="cz-fig">
-          <svg id="czSvg" viewBox="0 0 360 300" role="img" aria-label="コンフォートゾーンとデンジャーゾーン。サイクルを回すとコンフォートが広がる">
-            <circle cx="180" cy="150" r="132" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>
-            <circle id="czEdge" cx="180" cy="150" r="76" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>
-            <circle id="czComfort" cx="180" cy="150" r="50" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5"/>
-            <text x="180" y="32" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.15em">DANGER</text>
-            <g id="czMarker" style="transform:translate(0px,0px)">
-              <circle class="mk" cx="180" cy="150" r="7"/>
-              <text class="han" x="180" y="133" text-anchor="middle" fill="var(--h)" font-size="14" style="font-family:var(--serif)">馴</text>
-            </g>
-          </svg>
-        </div>
-        <div class="cz-legend">
-          <span><i style="background:var(--c)"></i>コンフォート</span>
-          <span><i style="background:var(--amber)"></i>一歩の外＝適応</span>
-          <span><i style="background:var(--e)"></i>デンジャー</span>
-        </div>
-      </div>
-      <div class="cz-panel">
-        <div class="cz-read">
-          <div class="cz-metric"><div class="l">サイクル</div><div class="n" id="czCycles">0</div></div>
-          <div class="cz-metric" style="flex:1"><div class="l">ゾーン拡張</div><div class="cz-bar"><i id="czBar"></i></div></div>
-        </div>
-        <div class="czmsg" id="czMsg">一歩だけ外へ出て、すぐ戻って回復する。それだけ。</div>
-        <div class="cz-btns">
-          <button class="czbtn primary" id="czStep">▶ 一歩 → 回復（1サイクル）</button>
-          <button class="czbtn" id="czStay">快適圏に留まる</button>
-          <button class="czbtn" id="czDive">危険圏に飛び込む</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- DOSE-RESPONSE -->
   <section id="dose">
-    <p class="sec-eye">Dose · Response</p>
+    <p class="sec-eye">05 · The Caveat</p>
     <h2>強すぎると、<em>逆に</em>下がる</h2>
+    <p class="sec-lead">一歩が大きすぎると、馴化ではなく<b>感作（過敏化）</b>が起きる。適応はマイナスへ。</p>
     <div class="hz">
       <div class="hz-fig">
         <svg id="hzSvg" viewBox="0 0 460 300" role="img" tabindex="0" aria-label="ストレス量と適応量の曲線。最適点でピーク、過剰で低下、行き過ぎると感作でマイナスになる"></svg>
@@ -423,7 +430,7 @@
 <footer class="closing">
   <div class="wrap" style="padding-top:clamp(56px,10vw,110px); padding-bottom:clamp(56px,10vw,110px);">
     <blockquote>触れて、回復して、<br>また<em>触れる</em>。</blockquote>
-    <p class="sig">Stress Cycle Strategy</p>
+    <p class="sig">馴化のフレームワーク</p>
   </div>
 </footer>
 
