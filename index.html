@@ -134,6 +134,16 @@
   .tag.hot { color:#0a0d11; background:var(--amber); border-color:var(--amber); font-weight:600; }
   .lever-note { font-size:13.5px; color:var(--muted); margin:22px 0 0; max-width:34em; line-height:1.75; }
   .lever-note b { color:var(--ink); font-weight:400; }
+  .lever-block { border-top:1px solid var(--hair); padding-top:28px; margin-top:32px; }
+  .lever-block.first { border-top:0; padding-top:0; margin-top:20px; }
+  .lever-head { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .lever-no { font-family:var(--serif); font-size:30px; color:var(--amber); line-height:1; flex:none;
+    width:46px; height:46px; display:grid; place-items:center; border:1px solid var(--hair-2); border-radius:11px; }
+  .lever-title { font-family:var(--serif); font-size:clamp(20px,3.2vw,26px); }
+  .lever-title span { font-size:13.5px; color:var(--muted); font-family:var(--sans); margin-left:9px; }
+  .lever-sub { font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--faint); margin-top:4px; }
+  .lever-lead { color:var(--ink-soft); font-size:14px; line-height:1.7; max-width:34em; margin:0 0 18px; }
+  .lever-lead b { color:var(--amber); font-weight:400; }
 
   /* ---------- CYCLE (ring diagram) ---------- */
   .cycle-wrap { max-width:520px; margin:0 auto; }
@@ -413,46 +423,62 @@
     </div>
   </section>
 
-  <!-- LEVER -->
-  <section id="lever">
-    <p class="sec-eye">05 · The Lever</p>
-    <h2>レバーは<em>一本</em></h2>
-    <div class="ladder">
-      <div class="rung">
-        <span class="rk">上流</span>
-        <span class="rn">脅威判定<small>Threat appraisal</small></span>
-        <span class="tag dim">経験依存</span>
+  <!-- TWO LEVERS -->
+  <section id="levers">
+    <p class="sec-eye">05 · The Two Levers</p>
+    <h2>レバーは<em>二本</em></h2>
+    <p class="sec-lead">押し付けられるストレスなら、操作できるのは回復速度の1本。だが<b>自分で一歩を選ぶ</b>このフレームワークでは、負荷量そのものもレバーになる。2本は直交する ── どちらも片方には潰せない。</p>
+
+    <div class="lever-block first">
+      <div class="lever-head">
+        <span class="lever-no">①</span>
+        <div>
+          <div class="lever-title">負荷 <span>一歩の大きさ</span></div>
+          <div class="lever-sub">How far you step out — ホルメシスの最適点に置く</div>
+        </div>
       </div>
-      <div class="rung">
-        <span class="rk">中流</span>
-        <span class="rn">応答振幅<small>Response amplitude</small></span>
-        <span class="tag mid">最適化可</span>
-      </div>
-      <div class="rung">
-        <span class="rk">下流</span>
-        <span class="rn">クリアランス<small>Clearance · 半減期60–90分</small></span>
-        <span class="tag dim">定数 · レバー無</span>
-      </div>
-      <div class="rung key">
-        <span class="rk">━</span>
-        <span class="rn">回復速度<small>Recovery velocity</small></span>
-        <span class="tag hot">唯一のレバー</span>
+      <p class="lever-lead">小さすぎれば変化なし、大きすぎれば<b>感作（過敏化）</b>でマイナス。最適点にどれだけ寄せられるかがレバー。</p>
+      <div class="hz">
+        <div class="hz-fig">
+          <svg id="hzSvg" viewBox="0 0 460 300" role="img" tabindex="0" aria-label="ストレス量と適応量の曲線。最適点でピーク、過剰で低下、行き過ぎると感作でマイナスになる"></svg>
+        </div>
+        <div class="hz-read"><span class="hz-zone" id="hzZone">最適</span><span class="hz-note" id="hzNote">馴化が最も進む</span></div>
+        <div class="hz-hint">← ドラッグでストレス量を動かす →</div>
       </div>
     </div>
-    <p class="lever-note">下流は速められない。「発散」の正体は分泌停止＋自然減衰であって、処理の高速化ではない。<b>回復速度だけが、生理出力の低減と次に触れる間隔の短縮を同時に動かす。</b></p>
-  </section>
 
-  <!-- DOSE-RESPONSE -->
-  <section id="dose">
-    <p class="sec-eye">06 · The Caveat</p>
-    <h2>強すぎると、<em>逆に</em>下がる</h2>
-    <p class="sec-lead">一歩が大きすぎると、馴化ではなく<b>感作（過敏化）</b>が起きる。適応はマイナスへ。</p>
-    <div class="hz">
-      <div class="hz-fig">
-        <svg id="hzSvg" viewBox="0 0 460 300" role="img" tabindex="0" aria-label="ストレス量と適応量の曲線。最適点でピーク、過剰で低下、行き過ぎると感作でマイナスになる"></svg>
+    <div class="lever-block">
+      <div class="lever-head">
+        <span class="lever-no">②</span>
+        <div>
+          <div class="lever-title">回復速度 <span>どれだけ速く戻れるか</span></div>
+          <div class="lever-sub">Recovery velocity — 次に踏み出せる間隔＝サイクル回転数の律速</div>
+        </div>
       </div>
-      <div class="hz-read"><span class="hz-zone" id="hzZone">最適</span><span class="hz-note" id="hzNote">馴化が最も進む</span></div>
-      <div class="hz-hint">← ドラッグでストレス量を動かす →</div>
+      <p class="lever-lead">1回の暴露の内部処理を分解すると、動かせるのは回復速度だけ。</p>
+      <div class="ladder">
+        <div class="rung">
+          <span class="rk">上流</span>
+          <span class="rn">脅威判定<small>Threat appraisal</small></span>
+          <span class="tag dim">経験依存</span>
+        </div>
+        <div class="rung">
+          <span class="rk">中流</span>
+          <span class="rn">応答振幅<small>Response amplitude</small></span>
+          <span class="tag mid">最適化可</span>
+        </div>
+        <div class="rung">
+          <span class="rk">下流</span>
+          <span class="rn">クリアランス<small>Clearance · 半減期60–90分</small></span>
+          <span class="tag dim">定数 · レバー無</span>
+        </div>
+        <div class="rung key">
+          <span class="rk">━</span>
+          <span class="rn">回復速度<small>Recovery velocity</small></span>
+          <span class="tag hot">これがレバー②</span>
+        </div>
+      </div>
+      <p class="lever-note">「発散」の正体は分泌停止＋自然減衰であって、処理の高速化ではない。<b>回復速度が、生理出力の低減と、次に触れる間隔の短縮を同時に動かす。</b></p>
     </div>
   </section>
 
