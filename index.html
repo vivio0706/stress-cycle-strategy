@@ -821,7 +821,7 @@
 /* ---- Habituation decay: same stimulus, response falls toward a floor ---- */
 (function(){
   var svg=document.getElementById('hbSvg'); if(!svg) return;
-  var FLOOR=12, RATE=0.87, MAXN=12;
+  var FLOOR=15, RATE=0.86, MAXN=16;
   var L=46, RIGHT=464, TOP=30, BASE=250;
   var slot=(RIGHT-L)/MAXN, bw=slot*0.58;
   function val(i){ return FLOOR+(100-FLOOR)*Math.pow(RATE,i-1); }
