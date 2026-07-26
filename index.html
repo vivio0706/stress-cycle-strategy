@@ -804,17 +804,17 @@
     if(busy){ if(done)done(); return; }
     busy=true;
     var localR=radiusAt(dir), maxed=localR>=CAP-1.5;
-    if(reduce){ tweenTo(shape(1),0); cycles++; readout(); msg.textContent='踏み出した方向のゾーンが広がった。'; dir+=GOLDEN; busy=false; if(done)done(); return; }
+    if(reduce){ tweenTo(shape(1),0); cycles++; readout(); msg.textContent='馴化＝その方向のコンフォートが広がる。'; dir+=GOLDEN; busy=false; if(done)done(); return; }
     var dist=Math.min(localR+13,128);
     mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot');
     msg.textContent= maxed ? '① この方向はもう限界近い（デンジャー手前）' : '① その方向へ一歩だけ（暴露）';
     setTimeout(function(){ mv(0,0); msg.textContent='② すぐコンフォートに戻る'; },560);
-    setTimeout(function(){ marker.classList.add('hab'); msg.textContent='③ 休んで回復 → 馴化…'; },1100);
-    setTimeout(function(){ marker.classList.remove('hab'); cycles++; tweenTo(shape(1),520); msg.textContent='踏み出した方向のコンフォートが広がった。'; },1720);
-    setTimeout(function(){ marker.classList.remove('hot'); busy=false; dir+=GOLDEN; if(done)done(); },2260);
+    setTimeout(function(){ marker.classList.add('hab'); msg.textContent='③ 休んで回復…'; },1100);
+    setTimeout(function(){ cycles++; tweenTo(shape(1),520); msg.textContent='④ 馴化＝その方向のコンフォートが広がる'; },1720);
+    setTimeout(function(){ marker.classList.remove('hab'); marker.classList.remove('hot'); busy=false; dir+=GOLDEN; if(done)done(); },2260);
   }
   function tick(){ if(!auto) return;
-    if(avgR()>=CAP-4 || autoCount>=30){ auto=false; setBtn(); msg.textContent='全方向に広げきった。これがゾーンの拡げ方。'; return; }
+    if(avgR()>=CAP-4 || autoCount>=30){ auto=false; setBtn(); msg.textContent='ここまで広がった。ゾーンの拡張に、終わりはない。'; return; }
     autoCount++; runCycle(function(){ if(auto) setTimeout(tick,240); });
   }
   function toggleAuto(){ if(auto){ auto=false; setBtn(); } else { auto=true; setBtn(); tick(); } }
