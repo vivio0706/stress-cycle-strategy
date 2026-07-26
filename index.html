@@ -278,7 +278,7 @@
         </div>
         <div class="czmsg" id="czMsg">一歩だけ外へ出て、すぐ戻って回復する。それだけ。</div>
         <div class="cz-btns">
-          <button class="czbtn primary" id="czStep">▶ 一歩 → 回復（1サイクル）</button>
+          <button class="czbtn primary" id="czStep">▶ 自動でサイクルを回す</button>
           <button class="czbtn" id="czStay">快適圏に留まる</button>
           <button class="czbtn" id="czDive">危険圏に飛び込む</button>
         </div>
@@ -307,7 +307,7 @@
         <svg id="hbSvg" viewBox="0 0 480 300" role="img" aria-label="同じ刺激への応答が反復で逓減し、下げ止まりに漸近するグラフ"></svg>
       </div>
       <div class="hb-ctl">
-        <button class="hb-btn" id="hbStep">▶ 同じ刺激に、もう一度</button>
+        <button class="hb-btn" id="hbStep">▶ 自動で繰り返す</button>
         <button class="hb-btn hb-reset" id="hbReset">リセット</button>
         <span class="hb-read" id="hbRead"></span>
       </div>
@@ -797,28 +797,38 @@
   }
   draw(); readout();
 
-  function step(){
-    if(busy) return; busy=true;
+  var auto=false, autoCount=0, stepBtn=document.getElementById('czStep');
+  function setBtn(){ stepBtn.textContent = auto ? '⏸ 自動実行を止める' : '▶ 自動でサイクルを回す'; }
+
+  function runCycle(done){
+    if(busy){ if(done)done(); return; }
+    busy=true;
     var localR=radiusAt(dir), maxed=localR>=CAP-1.5;
-    if(reduce){ tweenTo(shape(1),0); cycles++; readout(); msg.textContent='踏み出した方向のゾーンが広がった。'; dir+=GOLDEN; busy=false; return; }
+    if(reduce){ tweenTo(shape(1),0); cycles++; readout(); msg.textContent='踏み出した方向のゾーンが広がった。'; dir+=GOLDEN; busy=false; if(done)done(); return; }
     var dist=Math.min(localR+13,128);
     mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot');
     msg.textContent= maxed ? '① この方向はもう限界近い（デンジャー手前）' : '① その方向へ一歩だけ（暴露）';
     setTimeout(function(){ mv(0,0); msg.textContent='② すぐコンフォートに戻る'; },560);
     setTimeout(function(){ marker.classList.add('hab'); msg.textContent='③ 休んで回復 → 馴化…'; },1100);
     setTimeout(function(){ marker.classList.remove('hab'); cycles++; tweenTo(shape(1),520); msg.textContent='踏み出した方向のコンフォートが広がった。'; },1720);
-    setTimeout(function(){ marker.classList.remove('hot'); busy=false; dir+=GOLDEN; },2260);
+    setTimeout(function(){ marker.classList.remove('hot'); busy=false; dir+=GOLDEN; if(done)done(); },2260);
   }
-  function stay(){ if(busy) return; msg.textContent='刺激なし → 変化なし。ゾーンは広がらない。';
+  function tick(){ if(!auto) return;
+    if(avgR()>=CAP-4 || autoCount>=30){ auto=false; setBtn(); msg.textContent='全方向に広げきった。これがゾーンの拡げ方。'; return; }
+    autoCount++; runCycle(function(){ if(auto) setTimeout(tick,240); });
+  }
+  function toggleAuto(){ if(auto){ auto=false; setBtn(); } else { auto=true; setBtn(); tick(); } }
+  function stay(){ auto=false; setBtn(); if(busy) return; msg.textContent='刺激なし → 変化なし。ゾーンは広がらない。';
     if(!reduce){ mv(0,-6); setTimeout(function(){ mv(0,0); },180); } }
-  function dive(){ if(busy) return; busy=true; msg.textContent='いきなり深く踏み込む → 過負荷。その方向はむしろ縮む（感作）。';
+  function dive(){ auto=false; setBtn(); if(busy) return; busy=true; msg.textContent='いきなり深く踏み込む → 過負荷。その方向はむしろ縮む（感作）。';
     var dist=Math.min(radiusAt(dir)+40,130);
     if(reduce){ tweenTo(shape(-1),0); dir+=GOLDEN; busy=false; return; }
     mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot'); marker.classList.add('danger');
     setTimeout(function(){ tweenTo(shape(-1),520); },520);
     setTimeout(function(){ mv(0,0); marker.classList.remove('hot'); marker.classList.remove('danger'); busy=false; dir+=GOLDEN; },1150);
   }
-  document.getElementById('czStep').addEventListener('click',step);
+  setBtn();
+  stepBtn.addEventListener('click',toggleAuto);
   document.getElementById('czStay').addEventListener('click',stay);
   document.getElementById('czDive').addEventListener('click',dive);
 })();
@@ -941,11 +951,15 @@
     document.getElementById('hbCurve').setAttribute('points', pts.join(' '));
     var cur=Math.round(val(n)), pct=Math.round(cur/100*100);
     readEl.innerHTML='<b>'+n+'回目</b>：応答 '+cur+'（初回比 '+pct+'%）'+(n>=MAXN?' · 下げ止まり付近':'');
-    stepBtn.disabled = n>=MAXN;
   }
-  stepBtn.addEventListener('click',function(){ if(n<MAXN){ n++; render(); } });
-  document.getElementById('hbReset').addEventListener('click',function(){ n=1; render(); });
-  render();
+  var auto=false, timer=null;
+  function setHbBtn(){ stepBtn.textContent = auto ? '⏸ 停止' : '▶ 自動で繰り返す'; }
+  function stopHb(){ auto=false; if(timer){ clearInterval(timer); timer=null; } setHbBtn(); }
+  function stepOnce(){ if(n<MAXN){ n++; render(); } if(n>=MAXN) stopHb(); }
+  function startHb(){ if(n>=MAXN){ n=1; render(); } auto=true; setHbBtn(); timer=setInterval(stepOnce,600); }
+  stepBtn.addEventListener('click',function(){ auto ? stopHb() : startHb(); });
+  document.getElementById('hbReset').addEventListener('click',function(){ stopHb(); n=1; render(); });
+  render(); setHbBtn();
 })();
 
 /* ---- ①×② coupling: bigger load costs recovery, so fastest-expansion load sits left of adaptation peak ---- */
