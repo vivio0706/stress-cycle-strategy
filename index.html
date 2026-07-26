@@ -787,11 +787,13 @@
     t.push(Math.max(FLOORR, Math.min(CAP, radii[j]+sign*(sign>0?STEP:SHRINK)*g))); } return t; }
   function tweenTo(target,dur){
     if(reduce||!dur){ for(var j=0;j<N;j++) radii[j]=target[j]; draw(); readout(); return; }
-    var s0=radii.slice(), t0=null;
-    function fr(ts){ if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur);
+    var s0=radii.slice(), t0=null, done=false;
+    function fr(ts){ if(done) return; if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur);
       for(var j=0;j<N;j++) radii[j]=s0[j]+(target[j]-s0[j])*f;
-      draw(); readout(); if(f<1) requestAnimationFrame(fr); }
+      draw(); readout(); if(f<1) requestAnimationFrame(fr); else done=true; }
     requestAnimationFrame(fr);
+    // fallback: guarantee final shape even if rAF is frozen (background tab)
+    setTimeout(function(){ if(!done){ done=true; for(var j=0;j<N;j++) radii[j]=target[j]; draw(); readout(); } }, dur+150);
   }
   draw(); readout();
 
