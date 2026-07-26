@@ -144,6 +144,17 @@
   .lever-sub { font-family:var(--mono); font-size:11px; letter-spacing:.03em; color:var(--faint); margin-top:4px; }
   .lever-lead { color:var(--ink-soft); font-size:14px; line-height:1.7; max-width:34em; margin:0 0 18px; }
   .lever-lead b { color:var(--amber); font-weight:400; }
+  .lever-x { font-family:var(--serif); color:var(--amber); flex:none; display:flex; align-items:center; gap:3px;
+    height:46px; padding:0 12px; border:1px solid var(--hair-2); border-radius:11px; font-size:19px; }
+  .lever-x i { font-style:normal; color:var(--muted); font-size:13px; }
+  .cp { max-width:720px; }
+  .cp-fig svg { width:100%; height:auto; display:block; touch-action:none; cursor:ew-resize; -webkit-user-select:none; user-select:none; outline:none; }
+  .cp-fig svg:focus-visible { outline:1px solid var(--hair-2); border-radius:8px; }
+  .cp-read { margin-top:12px; }
+  .cp-big { font-family:var(--serif); font-size:clamp(19px,2.8vw,24px); }
+  .cp-big b { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .cp-sub { font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:5px; }
+  .cp-verdict { font-size:13px; color:var(--ink-soft); margin-top:6px; line-height:1.6; }
 
   /* ---------- CYCLE (ring diagram) ---------- */
   .cycle-wrap { max-width:520px; margin:0 auto; }
@@ -479,6 +490,24 @@
         </div>
       </div>
       <p class="lever-note">「発散」の正体は分泌停止＋自然減衰であって、処理の高速化ではない。<b>回復速度が、生理出力の低減と、次に触れる間隔の短縮を同時に動かす。</b></p>
+    </div>
+
+    <div class="lever-block">
+      <div class="lever-head">
+        <span class="lever-x">①<i>×</i>②</span>
+        <div>
+          <div class="lever-title">相互作用 <span>負荷を上げると、回復も延びる</span></div>
+          <div class="lever-sub">Coupling — 2本は独立だが、無関係ではない</div>
+        </div>
+      </div>
+      <p class="lever-lead">大きく踏むほど1回の適応は増える。だが応答が大きいぶん<b>回復も長引き</b>、サイクル回転が落ちる。だから最速で広げる負荷は、適応が最大になる点より<b>手前</b>にある。</p>
+      <div class="cp">
+        <div class="cp-fig">
+          <svg id="cpSvg" viewBox="0 0 480 300" role="img" tabindex="0" aria-label="負荷に対する 適応/回・回復時間・拡張速度 の3曲線。拡張速度のピークは適応ピークより手前にある"></svg>
+        </div>
+        <div class="cp-read" id="cpRead"></div>
+        <div class="hz-hint">← ドラッグで一歩の大きさを動かす →</div>
+      </div>
     </div>
   </section>
 
@@ -901,6 +930,75 @@
   stepBtn.addEventListener('click',function(){ if(n<MAXN){ n++; render(); } });
   document.getElementById('hbReset').addEventListener('click',function(){ n=1; render(); });
   render();
+})();
+
+/* ---- ①×② coupling: bigger load costs recovery, so fastest-expansion load sits left of adaptation peak ---- */
+(function(){
+  var svg=document.getElementById('cpSvg'); if(!svg) return;
+  var C=0.7, B=0.15, K=0.85;
+  var L=52, RIGHT=452, W=RIGHT-L, TOP=30, BASE=248, H=(BASE-TOP)*0.80;
+  function adapt(t){ return t*(C-t); }
+  function rec(t){ return B+K*t; }
+  function speed(t){ var a=adapt(t); return a>0 ? a/rec(t) : 0; }
+  var aMax=C*C/4, tPk=(-B+Math.sqrt(B*B+K*C*B))/K, sMax=speed(tPk), recMax=rec(1);
+  function xp(t){ return L+t*W; }
+  function aY(t){ return BASE - Math.max(0,adapt(t))/aMax*H; }
+  function sY(t){ return BASE - speed(t)/sMax*H; }
+  function rY(t){ return BASE - rec(t)/recMax*H; }
+  function poly(fn,t0,t1){ var p=''; for(var i=0;i<=60;i++){ var t=t0+(t1-t0)*i/60; p+=(i?' ':'')+xp(t).toFixed(1)+','+fn(t).toFixed(1); } return p; }
+
+  var h='';
+  h+='<line x1="'+L+'" y1="'+TOP+'" x2="'+L+'" y2="'+BASE+'" stroke="var(--hair-2)" stroke-width="1"/>';
+  h+='<line x1="'+L+'" y1="'+BASE+'" x2="'+RIGHT+'" y2="'+BASE+'" stroke="var(--hair-2)" stroke-width="1"/>';
+  h+='<text x="'+RIGHT+'" y="'+(BASE+22)+'" text-anchor="end" fill="var(--muted)" font-size="10.5" style="font-family:var(--mono)">一歩の大きさ（負荷）→</text>';
+  h+='<polyline fill="none" stroke="#e05555" stroke-width="1.3" stroke-dasharray="4 4" opacity=".5" points="'+poly(rY,0,1)+'"/>';
+  h+='<polyline fill="none" stroke="var(--amber)" stroke-width="1.8" opacity=".9" points="'+poly(aY,0,0.72)+'"/>';
+  h+='<polyline fill="none" stroke="var(--c)" stroke-width="2.6" points="'+poly(sY,0,0.72)+'"/>';
+  h+='<line x1="'+xp(0.35).toFixed(1)+'" y1="'+TOP+'" x2="'+xp(0.35).toFixed(1)+'" y2="'+BASE+'" stroke="var(--amber)" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>';
+  h+='<text x="'+xp(0.35).toFixed(1)+'" y="'+(TOP-9)+'" text-anchor="middle" fill="var(--amber)" font-size="10" style="font-family:var(--mono)">適応 最大</text>';
+  h+='<line x1="'+xp(tPk).toFixed(1)+'" y1="'+TOP+'" x2="'+xp(tPk).toFixed(1)+'" y2="'+BASE+'" stroke="var(--c)" stroke-width="1" stroke-dasharray="2 3" opacity=".75"/>';
+  h+='<text x="'+xp(tPk).toFixed(1)+'" y="'+(TOP-9)+'" text-anchor="middle" fill="var(--c)" font-size="10" style="font-family:var(--mono)">最速</text>';
+  h+='<g font-size="9.5" style="font-family:var(--mono)">';
+  h+='<circle cx="'+(L+8)+'" cy="'+(BASE-8)+'" r="3" fill="var(--c)"/><text x="'+(L+16)+'" y="'+(BASE-5)+'" fill="var(--muted)">拡張速度</text>';
+  h+='<circle cx="'+(L+92)+'" cy="'+(BASE-8)+'" r="3" fill="var(--amber)"/><text x="'+(L+100)+'" y="'+(BASE-5)+'" fill="var(--muted)">適応/回</text>';
+  h+='<circle cx="'+(L+168)+'" cy="'+(BASE-8)+'" r="3" fill="#e05555"/><text x="'+(L+176)+'" y="'+(BASE-5)+'" fill="var(--muted)">回復時間</text>';
+  h+='</g>';
+  h+='<line id="cpVly" stroke="var(--faint)" stroke-width="1" stroke-dasharray="2 3" opacity=".6"/>';
+  h+='<circle id="cpDotA" r="3.5" fill="var(--amber)"/>';
+  h+='<circle id="cpDotR" r="3" fill="#e05555"/>';
+  h+='<circle id="cpDotS" r="6" fill="var(--c)" stroke="#0a0d11" stroke-width="2"/>';
+  svg.innerHTML=h;
+
+  var vly=svg.querySelector('#cpVly'), dA=svg.querySelector('#cpDotA'), dR=svg.querySelector('#cpDotR'), dS=svg.querySelector('#cpDotS');
+  var read=document.getElementById('cpRead');
+  function verdict(t){
+    if(t<0.10) return {z:'不足', c:'var(--faint)', v:'一歩が小さすぎ。適応も速度も出ない。'};
+    if(t<0.28) return {z:'最速', c:'var(--c)', v:'最速ゾーン。回復が軽く、回転数で稼ぐ。'};
+    if(t<0.45) return {z:'適応寄り', c:'var(--amber)', v:'適応は伸びるが、回復に食われ始める。'};
+    if(t<0.70) return {z:'過大', c:'#e0955a', v:'1回は効くが、回復が長引き回転が落ちる。'};
+    return {z:'危険', c:'#e05555', v:'感作リスク。適応がマイナスへ。'};
+  }
+  function update(t){
+    t=Math.max(0,Math.min(1,t));
+    var x=xp(t);
+    vly.setAttribute('x1',x.toFixed(1)); vly.setAttribute('x2',x.toFixed(1)); vly.setAttribute('y1',TOP); vly.setAttribute('y2',BASE);
+    dA.setAttribute('cx',x.toFixed(1)); dA.setAttribute('cy',aY(t).toFixed(1));
+    dR.setAttribute('cx',x.toFixed(1)); dR.setAttribute('cy',rY(t).toFixed(1));
+    dS.setAttribute('cx',x.toFixed(1)); dS.setAttribute('cy',sY(t).toFixed(1));
+    var vd=verdict(t);
+    read.innerHTML='<div class="cp-big" style="color:'+vd.c+'">拡張速度 <b>'+Math.round(speed(t)/sMax*100)+'%</b></div>'+
+      '<div class="cp-sub">適応 '+Math.round(Math.max(0,adapt(t))/aMax*100)+'% ・ 回復時間 '+Math.round(rec(t)/recMax*100)+'% ・ <span style="color:'+vd.c+'">'+vd.z+'</span></div>'+
+      '<div class="cp-verdict">'+vd.v+'</div>';
+  }
+  function fromEvent(e){ var r=svg.getBoundingClientRect(); var cx=(e.touches?e.touches[0].clientX:e.clientX); update(((cx-r.left)/r.width*480 - L)/W); }
+  var drag=false;
+  svg.addEventListener('pointerdown',function(e){ drag=true; try{svg.setPointerCapture(e.pointerId);}catch(_){} fromEvent(e); });
+  svg.addEventListener('pointermove',function(e){ if(drag) fromEvent(e); });
+  svg.addEventListener('pointerup',function(){ drag=false; });
+  svg.addEventListener('pointercancel',function(){ drag=false; });
+  svg.addEventListener('keydown',function(e){ var cur=(parseFloat(dS.getAttribute('cx'))-L)/W;
+    if(e.key==='ArrowRight'){ update(cur+0.03); e.preventDefault(); } else if(e.key==='ArrowLeft'){ update(cur-0.03); e.preventDefault(); } });
+  update(0.35);
 })();
 </script>
 
