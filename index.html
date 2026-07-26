@@ -848,6 +848,7 @@
   ];
   function zoneFor(t){ for(var i=0;i<ZONES.length;i++) if(t<ZONES[i].max) return ZONES[i]; return ZONES[3]; }
   function update(t){
+    if(isNaN(t)) return;
     t=Math.max(0,Math.min(1,t));
     var mx=ax(t), my=ay(t), z=zoneFor(t);
     mk.setAttribute('cx',mx.toFixed(1)); mk.setAttribute('cy',my.toFixed(1)); mk.setAttribute('fill',z.col);
@@ -856,7 +857,7 @@
     zoneEl.textContent=z.name; zoneEl.style.color=z.col; noteEl.textContent=z.note;
   }
   function fromEvent(e){
-    var rect=svg.getBoundingClientRect();
+    var rect=svg.getBoundingClientRect(); if(!rect.width) return;
     var cx=(e.touches?e.touches[0].clientX:e.clientX);
     update(((cx-rect.left)/rect.width*460 - L)/W);
   }
@@ -979,6 +980,7 @@
     return {z:'危険', c:'#e05555', v:'感作リスク。適応がマイナスへ。'};
   }
   function update(t){
+    if(isNaN(t)) return;
     t=Math.max(0,Math.min(1,t));
     var x=xp(t);
     vly.setAttribute('x1',x.toFixed(1)); vly.setAttribute('x2',x.toFixed(1)); vly.setAttribute('y1',TOP); vly.setAttribute('y2',BASE);
@@ -990,7 +992,7 @@
       '<div class="cp-sub">適応 '+Math.round(Math.max(0,adapt(t))/aMax*100)+'% ・ 回復時間 '+Math.round(rec(t)/recMax*100)+'% ・ <span style="color:'+vd.c+'">'+vd.z+'</span></div>'+
       '<div class="cp-verdict">'+vd.v+'</div>';
   }
-  function fromEvent(e){ var r=svg.getBoundingClientRect(); var cx=(e.touches?e.touches[0].clientX:e.clientX); update(((cx-r.left)/r.width*480 - L)/W); }
+  function fromEvent(e){ var r=svg.getBoundingClientRect(); if(!r.width) return; var cx=(e.touches?e.touches[0].clientX:e.clientX); update(((cx-r.left)/r.width*480 - L)/W); }
   var drag=false;
   svg.addEventListener('pointerdown',function(e){ drag=true; try{svg.setPointerCapture(e.pointerId);}catch(_){} fromEvent(e); });
   svg.addEventListener('pointermove',function(e){ if(drag) fromEvent(e); });
