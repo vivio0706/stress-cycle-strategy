@@ -809,9 +809,9 @@
     mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot');
     msg.textContent= maxed ? '① この方向はもう限界近い（デンジャー手前）' : '① その方向へ一歩だけ（暴露）';
     setTimeout(function(){ mv(0,0); msg.textContent='② すぐコンフォートに戻る'; },560);
-    setTimeout(function(){ marker.classList.add('hab'); msg.textContent='③ 休んで回復…'; },1100);
-    setTimeout(function(){ cycles++; tweenTo(shape(1),520); msg.textContent='④ 馴化＝その方向のコンフォートが広がる'; },1720);
-    setTimeout(function(){ marker.classList.remove('hab'); marker.classList.remove('hot'); busy=false; dir+=GOLDEN; if(done)done(); },2260);
+    setTimeout(function(){ msg.textContent='③ 休んで回復…'; },1100);
+    setTimeout(function(){ marker.classList.add('hab'); cycles++; tweenTo(shape(1),520); msg.textContent='④ 馴化＝コンフォートが広がる（同時）'; },1720);
+    setTimeout(function(){ marker.classList.remove('hab'); marker.classList.remove('hot'); busy=false; dir+=GOLDEN; if(done)done(); },2400);
   }
   function tick(){ if(!auto) return;
     if(avgR()>=CAP-4 || autoCount>=30){ auto=false; setBtn(); msg.textContent='ここまで広がった。ゾーンの拡張に、終わりはない。'; return; }
