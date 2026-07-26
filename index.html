@@ -183,6 +183,8 @@
   .cz-legend { display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:11.5px; color:var(--muted); }
   .cz-legend span { display:flex; align-items:center; gap:6px; }
   .cz-legend i { width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
+  .cz-note { font-family:var(--mono); font-size:10.5px; color:var(--faint); margin-top:8px; line-height:1.6; max-width:34em; }
+  #czComfort { transition:none; }
   #czComfort, #czEdge { transition:r .55s cubic-bezier(.4,0,.2,1); }
   #czMarker { transition:transform .5s cubic-bezier(.4,0,.2,1); }
   #czMarker .mk { fill:var(--amber); transition:fill .3s ease; }
@@ -254,8 +256,7 @@
         <div class="cz-fig">
           <svg id="czSvg" viewBox="0 0 360 300" role="img" aria-label="コンフォートゾーンとデンジャーゾーン。サイクルを回すとコンフォートが広がる">
             <circle cx="180" cy="150" r="132" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>
-            <circle id="czEdge" cx="180" cy="150" r="76" fill="none" stroke="var(--amber)" stroke-width="1" stroke-dasharray="3 4" opacity=".6"/>
-            <circle id="czComfort" cx="180" cy="150" r="50" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5"/>
+            <path id="czComfort" d="" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5" stroke-linejoin="round"/>
             <text x="180" y="32" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.15em">DANGER</text>
             <g id="czMarker" style="transform:translate(0px,0px)">
               <circle class="mk" cx="180" cy="150" r="7"/>
@@ -265,9 +266,10 @@
         </div>
         <div class="cz-legend">
           <span><i style="background:var(--c)"></i>コンフォート</span>
-          <span><i style="background:var(--amber)"></i>一歩の外＝適応</span>
+          <span><i style="background:var(--amber)"></i>あなた／一歩</span>
           <span><i style="background:var(--e)"></i>デンジャー</span>
         </div>
+        <p class="cz-note">馴化は方向に固有。<b style="color:var(--amber);font-weight:400">踏み出した所だけ</b>広がる ── 全周を広げたいなら全方向で。</p>
       </div>
       <div class="cz-panel">
         <div class="cz-read">
@@ -757,50 +759,62 @@
 /* ---- Comfort zone expansion ---- */
 (function(){
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var START=50, MAX=104, STEP=7, BAND=24;   // edge(=comfort+BAND) stays inside danger(132)
-  var comfortR=START, cycles=0, busy=false;
   var comfort=document.getElementById('czComfort'),
-      edge=document.getElementById('czEdge'),
       marker=document.getElementById('czMarker'),
       msg=document.getElementById('czMsg'),
       cyEl=document.getElementById('czCycles'),
       bar=document.getElementById('czBar');
   if(!comfort) return;
-  function geo(){ comfort.setAttribute('r',comfortR); edge.setAttribute('r',comfortR+BAND); }
-  function readout(){ cyEl.textContent=cycles; bar.style.width=Math.max(0,Math.round((comfortR-START)/(MAX-START)*100))+'%'; }
-  function mv(dy){ marker.style.transform='translate(0px,'+dy+'px)'; }
-  geo(); readout();
+  var CX=180, CY=150, N=36, START=46, CAP=112, STEP=12, SIGMA=0.6, SHRINK=12, FLOORR=34;
+  var GOLDEN=Math.PI*(3-Math.sqrt(5)), ANG0=-Math.PI/2, DSTEP=2*Math.PI/N;
+  var ANG=[], radii=[]; for(var j=0;j<N;j++){ ANG.push(ANG0+j*DSTEP); radii.push(START); }
+  var dir=-Math.PI/2, cycles=0, busy=false;
+
+  function angDiff(a,b){ var d=Math.abs(a-b)%(2*Math.PI); return d>Math.PI?2*Math.PI-d:d; }
+  function radiusAt(dr){ var idx=(dr-ANG0)/DSTEP; idx=((idx%N)+N)%N; var j0=Math.floor(idx)%N, j1=(j0+1)%N, f=idx-Math.floor(idx); return radii[j0]*(1-f)+radii[j1]*f; }
+  function avgR(){ var s=0; for(var j=0;j<N;j++) s+=radii[j]; return s/N; }
+  function mid(a,b){ return [(a[0]+b[0])/2,(a[1]+b[1])/2]; }
+  function blobPath(){
+    var P=[]; for(var j=0;j<N;j++) P.push([CX+radii[j]*Math.cos(ANG[j]), CY+radii[j]*Math.sin(ANG[j])]);
+    var m0=mid(P[N-1],P[0]), d='M '+m0[0].toFixed(1)+' '+m0[1].toFixed(1);
+    for(var i=0;i<N;i++){ var m=mid(P[i],P[(i+1)%N]); d+=' Q '+P[i][0].toFixed(1)+' '+P[i][1].toFixed(1)+' '+m[0].toFixed(1)+' '+m[1].toFixed(1); }
+    return d+' Z';
+  }
+  function draw(){ comfort.setAttribute('d', blobPath()); }
+  function readout(){ cyEl.textContent=cycles; bar.style.width=Math.max(0,Math.round((avgR()-START)/(CAP-START)*100))+'%'; }
+  function mv(dx,dy){ marker.style.transform='translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)'; }
+  function shape(sign){ var t=[]; for(var j=0;j<N;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],dir)/SIGMA,2));
+    t.push(Math.max(FLOORR, Math.min(CAP, radii[j]+sign*(sign>0?STEP:SHRINK)*g))); } return t; }
+  function tweenTo(target,dur){
+    if(reduce||!dur){ for(var j=0;j<N;j++) radii[j]=target[j]; draw(); readout(); return; }
+    var s0=radii.slice(), t0=null;
+    function fr(ts){ if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur);
+      for(var j=0;j<N;j++) radii[j]=s0[j]+(target[j]-s0[j])*f;
+      draw(); readout(); if(f<1) requestAnimationFrame(fr); }
+    requestAnimationFrame(fr);
+  }
+  draw(); readout();
 
   function step(){
-    if(busy) return;
-    if(comfortR>=MAX){ msg.textContent='最大まで拡張。デンジャーの手前まで来た。'; return; }
-    busy=true;
-    if(reduce){
-      comfortR=Math.min(MAX,comfortR+STEP); geo(); cycles++; readout();
-      msg.textContent='一歩→戻って回復→馴化 → ゾーンが広がった。'; busy=false; return;
-    }
-    // ① 一歩だけ外へ（暴露）
-    mv(-(comfortR+12)); marker.classList.add('hot'); msg.textContent='① 一歩だけ外へ（暴露）';
-    // ② すぐコンフォートに戻る
-    setTimeout(function(){ mv(0); msg.textContent='② すぐコンフォートに戻る'; },560);
-    // ③ 中で休んで馴化（コンフォート内で回復）
+    if(busy) return; busy=true;
+    var localR=radiusAt(dir), maxed=localR>=CAP-1.5;
+    if(reduce){ tweenTo(shape(1),0); cycles++; readout(); msg.textContent='踏み出した方向のゾーンが広がった。'; dir+=GOLDEN; busy=false; return; }
+    var dist=Math.min(localR+13,128);
+    mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot');
+    msg.textContent= maxed ? '① この方向はもう限界近い（デンジャー手前）' : '① その方向へ一歩だけ（暴露）';
+    setTimeout(function(){ mv(0,0); msg.textContent='② すぐコンフォートに戻る'; },560);
     setTimeout(function(){ marker.classList.add('hab'); msg.textContent='③ 休んで回復 → 馴化…'; },1100);
-    // ④ ゾーン拡張
-    setTimeout(function(){
-      marker.classList.remove('hab');
-      comfortR=Math.min(MAX,comfortR+STEP); geo(); cycles++; readout();
-      msg.textContent='コンフォートゾーンが広がった。';
-    },1720);
-    setTimeout(function(){ marker.classList.remove('hot'); busy=false;
-      if(comfortR>=MAX) msg.textContent='最大まで拡張。これがゾーンの拡げ方。'; },2150);
+    setTimeout(function(){ marker.classList.remove('hab'); cycles++; tweenTo(shape(1),520); msg.textContent='踏み出した方向のコンフォートが広がった。'; },1720);
+    setTimeout(function(){ marker.classList.remove('hot'); busy=false; dir+=GOLDEN; },2260);
   }
   function stay(){ if(busy) return; msg.textContent='刺激なし → 変化なし。ゾーンは広がらない。';
-    if(!reduce){ mv(-6); setTimeout(function(){ mv(0); },180); } }
-  function dive(){ if(busy) return; busy=true; msg.textContent='いきなり深く踏み込む → 過負荷・消耗。むしろ縮む。';
-    if(reduce){ comfortR=Math.max(40,comfortR-6); geo(); readout(); busy=false; return; }
-    mv(-Math.min(comfortR+40,150)); marker.classList.add('hot'); marker.classList.add('danger');
-    setTimeout(function(){ comfortR=Math.max(40,comfortR-6); geo(); readout(); },520);
-    setTimeout(function(){ mv(0); marker.classList.remove('hot'); marker.classList.remove('danger'); busy=false; },1150);
+    if(!reduce){ mv(0,-6); setTimeout(function(){ mv(0,0); },180); } }
+  function dive(){ if(busy) return; busy=true; msg.textContent='いきなり深く踏み込む → 過負荷。その方向はむしろ縮む（感作）。';
+    var dist=Math.min(radiusAt(dir)+40,130);
+    if(reduce){ tweenTo(shape(-1),0); dir+=GOLDEN; busy=false; return; }
+    mv(dist*Math.cos(dir), dist*Math.sin(dir)); marker.classList.add('hot'); marker.classList.add('danger');
+    setTimeout(function(){ tweenTo(shape(-1),520); },520);
+    setTimeout(function(){ mv(0,0); marker.classList.remove('hot'); marker.classList.remove('danger'); busy=false; dir+=GOLDEN; },1150);
   }
   document.getElementById('czStep').addEventListener('click',step);
   document.getElementById('czStay').addEventListener('click',stay);
