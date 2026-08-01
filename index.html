@@ -226,6 +226,9 @@
   #stYou .han { transition: opacity .3s ease; }
   #stComfort { transition: r .5s cubic-bezier(.4,0,.2,1), fill .3s ease; }
   #stTring, #stTdot, #stTargetLbl { transition: stroke .3s ease, fill .3s ease; }
+  .st-grid { display:grid; grid-template-columns:minmax(0,290px) 1fr; gap:clamp(20px,4vw,44px); align-items:center; }
+  .st-side .st-ctl { margin-top:0; }
+  @media (max-width:640px){ .st-grid { grid-template-columns:1fr; } .st-grid .st-fig { max-width:300px; margin:0 auto; } }
 
   @media (max-width:760px) { .cz-stage { grid-template-columns:1fr; gap:16px; } .cz-fig { max-width:320px; margin:0 auto; } }
 
@@ -530,15 +533,17 @@
     <p class="sec-eye">06 · The Staircase</p>
     <h2>遠すぎる時は、<em>想像</em>で近づく</h2>
     <p class="sec-lead">ちょうどいい強度で実地に触れられるなら、そうすればいい。だが実際のアクションはコンフォートゾーンから離れすぎていて、直接やると<b>感作</b>する。<b>シミュレート・想像</b>なら強度を落として"ちょうどいい"に置ける ── その一歩ずつでコンフォートを実地まで近づける。</p>
-    <div class="st">
+    <div class="st st-grid">
       <div class="st-fig">
         <svg id="stSvg" viewBox="0 0 360 340" role="img" aria-label="コンフォートゾーンから遠い実際のアクションへ、想像での曝露を繰り返してコンフォートを近づける図"></svg>
       </div>
-      <div class="st-ctl">
-        <button class="st-btn" id="stClimb">▶ 想像で近づく</button>
-        <button class="st-btn ghost" id="stJump">直接やってみる</button>
+      <div class="st-side">
+        <div class="st-ctl">
+          <button class="st-btn" id="stClimb">▶ 想像で近づく</button>
+          <button class="st-btn ghost" id="stJump">直接やってみる</button>
+        </div>
+        <div class="st-read" id="stRead">実際のアクションは遠すぎて、直接だと感作する。想像で少しずつ近づく。</div>
       </div>
-      <div class="st-read" id="stRead">実際のアクションは遠すぎて、直接だと感作する。想像で少しずつ近づく。</div>
     </div>
   </section>
 
