@@ -1072,7 +1072,7 @@
   update(0.35);
 })();
 
-/* ---- Reaching a distant real action: imagination grows the comfort zone toward it; direct jump = sensitization ---- */
+/* ---- Reaching a distant real action: the comfort zone (a circle) grows until it includes the action; direct jump = sensitization ---- */
 (function(){
   var svg=document.getElementById('stSvg'); if(!svg) return;
   var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1093,7 +1093,6 @@
   h+='<text id="stTargetLbl" x="'+tx.toFixed(1)+'" y="'+(ty-14).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
   h+='<g id="stYou"><circle r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/><text class="han" x="0" y="-11" text-anchor="middle" fill="var(--h)" font-size="12" style="font-family:var(--serif);opacity:0">馴化</text></g>';
   h+='<g id="stFx" style="display:none"></g>';
-  h+='<text x="'+(CX-DANGER+2)+'" y="'+(CY+DANGER-3)+'" fill="var(--muted)" font-size="10" style="font-family:var(--mono)">● コンフォート</text>';
   svg.innerHTML=h;
 
   var comfort=svg.querySelector('#stComfort'), youG=svg.querySelector('#stYou'), han=youG.querySelector('.han'),
@@ -1146,7 +1145,7 @@
     fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
     fx.style.display='';
     setTimeout(function(){ tweenTo(bumpTarget(-1),420); },700);
-    setTimeout(function(){ youG.classList.remove('hot'); fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
+    setTimeout(function(){ youG.classList.remove('hot'); placeYou(0); fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
   });
 })();
 </script>
