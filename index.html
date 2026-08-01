@@ -1115,7 +1115,7 @@
     requestAnimationFrame(fr);
     setTimeout(function(){ if(!done){ done=true; for(var j=0;j<N;j++) radii[j]=target[j]; drawC(); placeYou(0); } }, dur+150);
   }
-  function placeYou(extra){ var r=radiusAt(TH)+(extra||0); youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
+  function placeYou(r){ r=r||0; youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
   function reached(){ return radiusAt(TH)>=TARGET-4; }
   function win(){ tring.setAttribute('stroke','#74b85d'); tdot.setAttribute('fill','#74b85d'); tLbl.setAttribute('fill','#74b85d'); tLbl.textContent='実際のアクション（届いた ✓）'; }
   function resetTgt(){ tring.setAttribute('stroke','#e05555'); tdot.setAttribute('fill','#e05555'); tLbl.setAttribute('fill','#e05555'); tLbl.textContent='実際のアクション'; }
@@ -1130,7 +1130,7 @@
     if(reduce){ tweenTo(bumpTarget(1),0);
       if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝標的の方向へコンフォートが伸びる。';
       busy=false; if(done)done(); return; }
-    youG.classList.add('hot'); placeYou(14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
+    youG.classList.add('hot'); placeYou(radiusAt(TH)+12); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
     setTimeout(function(){ placeYou(0); readEl.textContent='② 戻って回復'; },560);
     setTimeout(function(){ readEl.textContent='③ 休んで回復…'; },1100);
     setTimeout(function(){ tweenTo(bumpTarget(1),520); han.style.opacity='1'; readEl.textContent='④ 馴化＝標的の方向へコンフォートが伸びる'; },1720);
@@ -1142,7 +1142,7 @@
     if(auto) stopAuto(); if(busy) return;
     if(TARGET-radiusAt(TH)<=STEP*1.1){ tweenTo(bumpTarget(1),320); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
     busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。';
-    youG.classList.add('hot'); placeYou(TARGET-radiusAt(TH));
+    youG.classList.add('hot'); placeYou(TARGET);
     fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
     fx.style.display='';
     setTimeout(function(){ tweenTo(bumpTarget(-1),420); },700);
