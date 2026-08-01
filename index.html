@@ -214,6 +214,14 @@
   .hz-zone { font-family:var(--serif); font-size:clamp(20px,3.6vw,27px); transition:color .2s ease; }
   .hz-note { font-family:var(--mono); font-size:12px; color:var(--muted); }
   .hz-hint { font-family:var(--mono); font-size:10px; letter-spacing:.05em; color:var(--faint); margin-top:12px; }
+  .st { max-width:720px; }
+  .st-fig svg { width:100%; height:auto; display:block; }
+  .st-ctl { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+  .st-btn { padding:12px 18px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:var(--sans); font-size:14px; transition:background .15s ease; }
+  .st-btn:hover { background:rgba(212,165,116,.12); }
+  .st-btn.ghost { border-color:var(--hair-2); color:var(--ink-soft); }
+  .st-btn.ghost:hover { background:rgba(212,165,116,.06); }
+  .st-read { font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); min-height:22px; margin-top:12px; line-height:1.55; }
 
   @media (max-width:760px) { .cz-stage { grid-template-columns:1fr; gap:16px; } .cz-fig { max-width:320px; margin:0 auto; } }
 
@@ -510,6 +518,23 @@
         <div class="cp-read" id="cpRead"></div>
         <div class="hz-hint">← ドラッグで負荷を動かす　·　3本は各自のピーク＝100%に正規化（比べるのは"山の位置"）</div>
       </div>
+    </div>
+  </section>
+
+  <!-- STAIRCASE -->
+  <section id="stair">
+    <p class="sec-eye">06 · The Staircase</p>
+    <h2>遠すぎる時は、<em>想像</em>で階段を作る</h2>
+    <p class="sec-lead">ちょうどいい強度で実地に触れられるなら、そうすればいい。だが実際のアクションはコンフォートゾーンから離れすぎていて、直接やると<b>感作</b>する。<b>シミュレート・想像</b>なら強度を落として"ちょうどいい"に置ける ── それが実地への一段になる。</p>
+    <div class="st">
+      <div class="st-fig">
+        <svg id="stSvg" viewBox="0 0 480 330" role="img" aria-label="想像による段階的曝露の階段。実際のアクションは強すぎるが、想像で一段ずつ上ると届く"></svg>
+      </div>
+      <div class="st-ctl">
+        <button class="st-btn" id="stClimb">▶ 想像で一段ずつ上る</button>
+        <button class="st-btn ghost" id="stJump">直接やってみる</button>
+      </div>
+      <div class="st-read" id="stRead">実際のアクションは強すぎて、直接だと感作する。想像で一段ずつ。</div>
     </div>
   </section>
 
@@ -1035,6 +1060,59 @@
   svg.addEventListener('keydown',function(e){ var cur=(parseFloat(dS.getAttribute('cx'))-L)/W;
     if(e.key==='ArrowRight'){ update(cur+0.03); e.preventDefault(); } else if(e.key==='ArrowLeft'){ update(cur-0.03); e.preventDefault(); } });
   update(0.35);
+})();
+
+/* ---- The staircase: imagination as graded exposure toward the real action ---- */
+(function(){
+  var svg=document.getElementById('stSvg'); if(!svg) return;
+  var N=7, L=64, TREAD=46, BASE=280, RISE=26;
+  function sx(i){ return L+i*TREAD; }
+  function sy(i){ return BASE-i*RISE; }
+  function outline(a,b){ var d='M '+sx(a)+' '+sy(a); for(var i=a+1;i<=b;i++){ d+=' L '+sx(i).toFixed(1)+' '+sy(i-1).toFixed(1)+' L '+sx(i).toFixed(1)+' '+sy(i).toFixed(1); } return d; }
+  var cur=1, auto=false, timer=null, busy=false;
+  var readEl=document.getElementById('stRead'), climbBtn=document.getElementById('stClimb'), jumpBtn=document.getElementById('stJump');
+
+  var midY=((sy(0)+sy(N))/2).toFixed(0);
+  var h='';
+  h+='<line x1="'+L+'" y1="'+sy(N)+'" x2="'+L+'" y2="'+BASE+'" stroke="var(--hair-2)" stroke-width="1"/>';
+  h+='<text transform="rotate(-90 16 '+midY+')" x="16" y="'+midY+'" text-anchor="middle" fill="var(--muted)" font-size="10" style="font-family:var(--mono)">曝露の強度 →</text>';
+  h+='<line x1="'+L+'" y1="'+sy(N)+'" x2="'+(sx(N)+TREAD)+'" y2="'+sy(N)+'" stroke="#e05555" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>';
+  h+='<text id="stRealLbl" x="'+(sx(N)+TREAD)+'" y="'+(sy(N)-8)+'" text-anchor="end" fill="#e05555" font-size="11" style="font-family:var(--mono)">実際のアクション（そのままだと強すぎる）</text>';
+  h+='<path d="'+outline(0,N)+'" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".5"/>';
+  h+='<path id="stDone" d="" fill="none" stroke="var(--c)" stroke-width="3" stroke-linejoin="round"/>';
+  h+='<circle id="stYou" r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/>';
+  h+='<text x="'+sx(0)+'" y="'+(BASE+20)+'" fill="var(--c)" font-size="10.5" style="font-family:var(--mono)">コンフォート</text>';
+  h+='<text x="'+((sx(1)+sx(N))/2).toFixed(0)+'" y="'+(BASE+20)+'" text-anchor="middle" fill="var(--faint)" font-size="10.5" style="font-family:var(--mono)">各段＝想像での曝露（徐々に実地へ）→</text>';
+  h+='<g id="stJumpLayer" style="display:none"></g>';
+  svg.innerHTML=h;
+
+  var doneP=svg.querySelector('#stDone'), you=svg.querySelector('#stYou'), jumpLayer=svg.querySelector('#stJumpLayer'), realLbl=svg.querySelector('#stRealLbl');
+  function place(){ doneP.setAttribute('d',outline(0,cur)); you.setAttribute('cx',(sx(cur)+TREAD*0.5).toFixed(1)); you.setAttribute('cy',(sy(cur)-8).toFixed(1)); you.setAttribute('fill', cur>=N?'#74b85d':'var(--amber)'); }
+  function realReset(){ realLbl.setAttribute('fill','#e05555'); realLbl.textContent='実際のアクション（そのままだと強すぎる）'; }
+  function realWin(){ realLbl.setAttribute('fill','#74b85d'); realLbl.textContent='実際のアクション（もう"ちょうどいい"）'; }
+  function setBtn(){ climbBtn.textContent = auto ? '⏸ 止める' : '▶ 想像で一段ずつ上る'; }
+  function stopAuto(){ auto=false; if(timer){ clearInterval(timer); timer=null; } setBtn(); }
+  function climbOne(){
+    if(cur<N){ cur++; place();
+      if(cur>=N){ readEl.textContent='実地でOK ✓ ── 想像の階段で、実際のアクションに届いた。'; realWin(); stopAuto(); }
+      else readEl.textContent='想像で一段。コンフォートが上がり、次が"ちょうどいい"に。';
+    } else stopAuto();
+  }
+  function startAuto(){ if(cur>=N){ cur=1; realReset(); place(); } auto=true; setBtn(); timer=setInterval(climbOne,900); }
+  climbBtn.addEventListener('click',function(){ auto ? stopAuto() : startAuto(); });
+  jumpBtn.addEventListener('click',function(){
+    stopAuto(); if(busy) return;
+    if(N-cur<=1){ cur=N; place(); realWin(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
+    busy=true; readEl.textContent='いきなり実地へジャンプ → 飛びすぎて感作・逆効果。';
+    var x0=(sx(cur)+TREAD*0.5), y0=sy(cur)-8, x1=(sx(N)+TREAD*0.4), y1=sy(N)-26;
+    jumpLayer.innerHTML='<path d="M '+x0.toFixed(1)+' '+y0.toFixed(1)+' Q '+((x0+x1)/2).toFixed(1)+' '+(y1-30).toFixed(1)+' '+x1.toFixed(1)+' '+y1.toFixed(1)+'" fill="none" stroke="#e05555" stroke-width="2" stroke-dasharray="5 4"/>'+
+      '<circle cx="'+x1.toFixed(1)+'" cy="'+y1.toFixed(1)+'" r="4" fill="#e05555"/>'+
+      '<text x="'+x1.toFixed(1)+'" y="'+(y1-8).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
+    jumpLayer.style.display='';
+    setTimeout(function(){ if(cur>1){ cur--; place(); } },700);
+    setTimeout(function(){ jumpLayer.style.display='none'; busy=false; readEl.textContent='一段下がった。やはり想像の階段で、一段ずつ。'; },1600);
+  });
+  setBtn(); place();
 })();
 </script>
 
