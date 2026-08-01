@@ -1075,10 +1075,13 @@
   var readEl=document.getElementById('stRead'), climbBtn=document.getElementById('stClimb'), jumpBtn=document.getElementById('stJump');
   var tx=CX+TARGET*Math.cos(TH), ty=CY+TARGET*Math.sin(TH);
 
+  var N=32, SIGMA=0.72, FLOORR=34, ANG0=-Math.PI/2, DSTEP=2*Math.PI/N;
+  var ANG=[], radii=[]; for(var j=0;j<N;j++){ ANG.push(ANG0+j*DSTEP); radii.push(START); }
+
   var h='';
   h+='<circle cx="'+CX+'" cy="'+CY+'" r="'+DANGER+'" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>';
   h+='<text x="'+CX+'" y="'+(CY-DANGER+16)+'" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.12em">DANGER</text>';
-  h+='<circle id="stComfort" cx="'+CX+'" cy="'+CY+'" r="'+START+'" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5"/>';
+  h+='<path id="stComfort" d="" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5" stroke-linejoin="round"/>';
   h+='<circle id="stTring" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="8" fill="none" stroke="#e05555" stroke-width="2"/>';
   h+='<circle id="stTdot" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="2.6" fill="#e05555"/>';
   h+='<text id="stTargetLbl" x="'+tx.toFixed(1)+'" y="'+(ty-14).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
@@ -1089,38 +1092,46 @@
 
   var comfort=svg.querySelector('#stComfort'), youG=svg.querySelector('#stYou'), han=youG.querySelector('.han'),
       tring=svg.querySelector('#stTring'), tdot=svg.querySelector('#stTdot'), tLbl=svg.querySelector('#stTargetLbl'), fx=svg.querySelector('#stFx');
-  function drawC(){ comfort.setAttribute('r', comfortR.toFixed(1)); }
-  function placeYou(r){ youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
-  function reached(){ return comfortR>=TARGET-4; }
+  function angDiff(a,b){ var d=Math.abs(a-b)%(2*Math.PI); return d>Math.PI?2*Math.PI-d:d; }
+  function radiusAt(dr){ var idx=(dr-ANG0)/DSTEP; idx=((idx%N)+N)%N; var j0=Math.floor(idx)%N, j1=(j0+1)%N, f=idx-Math.floor(idx); return radii[j0]*(1-f)+radii[j1]*f; }
+  function blobPath(){ var P=[]; for(var j=0;j<N;j++) P.push([CX+radii[j]*Math.cos(ANG[j]), CY+radii[j]*Math.sin(ANG[j])]);
+    function mid(a,b){ return [(a[0]+b[0])/2,(a[1]+b[1])/2]; }
+    var m0=mid(P[N-1],P[0]), d='M '+m0[0].toFixed(1)+' '+m0[1].toFixed(1);
+    for(var i=0;i<N;i++){ var m=mid(P[i],P[(i+1)%N]); d+=' Q '+P[i][0].toFixed(1)+' '+P[i][1].toFixed(1)+' '+m[0].toFixed(1)+' '+m[1].toFixed(1); }
+    return d+' Z'; }
+  function drawC(){ comfort.setAttribute('d', blobPath()); }
+  function bump(sign){ for(var j=0;j<N;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],TH)/SIGMA,2)); radii[j]=Math.max(FLOORR, Math.min(TARGET, radii[j]+sign*STEP*g)); } }
+  function placeYou(extra){ var r=radiusAt(TH)+(extra||0); youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
+  function reached(){ return radiusAt(TH)>=TARGET-4; }
   function win(){ tring.setAttribute('stroke','#74b85d'); tdot.setAttribute('fill','#74b85d'); tLbl.setAttribute('fill','#74b85d'); tLbl.textContent='実際のアクション（届いた ✓）'; }
   function resetTgt(){ tring.setAttribute('stroke','#e05555'); tdot.setAttribute('fill','#e05555'); tLbl.setAttribute('fill','#e05555'); tLbl.textContent='実際のアクション'; }
   function setBtn(){ climbBtn.textContent = auto ? '⏸ 止める' : '▶ 想像で近づく'; }
   function stopAuto(){ auto=false; setBtn(); }
-  drawC(); placeYou(comfortR); setBtn();
+  drawC(); placeYou(0); setBtn();
 
   function imagineOne(done){
-    if(reached()){ win(); readEl.textContent='実地でOK ✓ ── コンフォートが実際のアクションまで届いた。'; if(done)done(); return; }
+    if(reached()){ win(); readEl.textContent='実地でOK ✓ ── コンフォートが標的方向へ届いた。'; if(done)done(); return; }
     if(busy){ if(done)done(); return; }
     busy=true;
-    if(reduce){ comfortR=Math.min(TARGET,comfortR+STEP); drawC(); placeYou(comfortR);
-      if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝コンフォートが実際のアクションへ近づく。';
+    if(reduce){ bump(1); drawC(); placeYou(0);
+      if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝標的の方向へコンフォートが伸びる。';
       busy=false; if(done)done(); return; }
-    placeYou(comfortR+14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
-    setTimeout(function(){ placeYou(comfortR); readEl.textContent='② 戻って回復'; },560);
+    placeYou(14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
+    setTimeout(function(){ placeYou(0); readEl.textContent='② 戻って回復'; },560);
     setTimeout(function(){ readEl.textContent='③ 休んで回復…'; },1100);
-    setTimeout(function(){ comfortR=Math.min(TARGET,comfortR+STEP); drawC(); placeYou(comfortR); han.style.opacity='1'; readEl.textContent='④ 馴化＝コンフォートが実際のアクションへ近づく'; },1720);
-    setTimeout(function(){ han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 実際のアクションまで届いた。'; } if(done)done(); },2400);
+    setTimeout(function(){ bump(1); drawC(); placeYou(0); han.style.opacity='1'; readEl.textContent='④ 馴化＝標的の方向へコンフォートが伸びる'; },1720);
+    setTimeout(function(){ han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 標的方向へ届いた。'; } if(done)done(); },2400);
   }
   function tick(){ if(!auto) return; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; stopAuto(); return; } imagineOne(function(){ if(auto) setTimeout(tick,240); }); }
-  climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ comfortR=START; drawC(); placeYou(comfortR); resetTgt(); } auto=true; setBtn(); tick(); });
+  climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ for(var j=0;j<N;j++) radii[j]=START; drawC(); placeYou(0); resetTgt(); } auto=true; setBtn(); tick(); });
   jumpBtn.addEventListener('click',function(){
     if(auto) stopAuto(); if(busy) return;
-    if(TARGET-comfortR<=STEP*1.1){ comfortR=TARGET; drawC(); placeYou(comfortR); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
+    if(TARGET-radiusAt(TH)<=STEP*1.1){ bump(1); drawC(); placeYou(0); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
     busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。';
-    placeYou(TARGET);
+    placeYou(TARGET-radiusAt(TH));
     fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
     fx.style.display='';
-    setTimeout(function(){ comfortR=Math.max(START-8,comfortR-8); drawC(); placeYou(comfortR); },700);
+    setTimeout(function(){ bump(-1); drawC(); placeYou(0); },700);
     setTimeout(function(){ fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
   });
 })();
