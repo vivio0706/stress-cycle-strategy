@@ -222,6 +222,10 @@
   .st-btn.ghost { border-color:var(--hair-2); color:var(--ink-soft); }
   .st-btn.ghost:hover { background:rgba(212,165,116,.06); }
   .st-read { font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); min-height:22px; margin-top:12px; line-height:1.55; }
+  #stYou { transition: transform .5s cubic-bezier(.4,0,.2,1); }
+  #stYou .han { transition: opacity .3s ease; }
+  #stComfort { transition: r .5s cubic-bezier(.4,0,.2,1), fill .3s ease; }
+  #stTring, #stTdot, #stTargetLbl { transition: stroke .3s ease, fill .3s ease; }
 
   @media (max-width:760px) { .cz-stage { grid-template-columns:1fr; gap:16px; } .cz-fig { max-width:320px; margin:0 auto; } }
 
@@ -524,17 +528,17 @@
   <!-- STAIRCASE -->
   <section id="stair">
     <p class="sec-eye">06 · The Staircase</p>
-    <h2>遠すぎる時は、<em>想像</em>で階段を作る</h2>
-    <p class="sec-lead">ちょうどいい強度で実地に触れられるなら、そうすればいい。だが実際のアクションはコンフォートゾーンから離れすぎていて、直接やると<b>感作</b>する。<b>シミュレート・想像</b>なら強度を落として"ちょうどいい"に置ける ── それが実地への一段になる。</p>
+    <h2>遠すぎる時は、<em>想像</em>で近づく</h2>
+    <p class="sec-lead">ちょうどいい強度で実地に触れられるなら、そうすればいい。だが実際のアクションはコンフォートゾーンから離れすぎていて、直接やると<b>感作</b>する。<b>シミュレート・想像</b>なら強度を落として"ちょうどいい"に置ける ── その一歩ずつでコンフォートを実地まで近づける。</p>
     <div class="st">
       <div class="st-fig">
-        <svg id="stSvg" viewBox="0 0 480 330" role="img" aria-label="想像による段階的曝露の階段。実際のアクションは強すぎるが、想像で一段ずつ上ると届く"></svg>
+        <svg id="stSvg" viewBox="0 0 360 340" role="img" aria-label="コンフォートゾーンから遠い実際のアクションへ、想像での曝露を繰り返してコンフォートを近づける図"></svg>
       </div>
       <div class="st-ctl">
-        <button class="st-btn" id="stClimb">▶ 想像で一段ずつ上る</button>
+        <button class="st-btn" id="stClimb">▶ 想像で近づく</button>
         <button class="st-btn ghost" id="stJump">直接やってみる</button>
       </div>
-      <div class="st-read" id="stRead">実際のアクションは強すぎて、直接だと感作する。想像で一段ずつ。</div>
+      <div class="st-read" id="stRead">実際のアクションは遠すぎて、直接だと感作する。想像で少しずつ近づく。</div>
     </div>
   </section>
 
@@ -1062,57 +1066,63 @@
   update(0.35);
 })();
 
-/* ---- The staircase: imagination as graded exposure toward the real action ---- */
+/* ---- Reaching a distant real action: imagination grows the comfort zone toward it; direct jump = sensitization ---- */
 (function(){
   var svg=document.getElementById('stSvg'); if(!svg) return;
-  var N=7, L=64, TREAD=46, BASE=280, RISE=26;
-  function sx(i){ return L+i*TREAD; }
-  function sy(i){ return BASE-i*RISE; }
-  function outline(a,b){ var d='M '+sx(a)+' '+sy(a); for(var i=a+1;i<=b;i++){ d+=' L '+sx(i).toFixed(1)+' '+sy(i-1).toFixed(1)+' L '+sx(i).toFixed(1)+' '+sy(i).toFixed(1); } return d; }
-  var cur=1, auto=false, timer=null, busy=false;
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var CX=175, CY=165, DANGER=140, TARGET=120, START=42, STEP=13, TH=0;
+  var comfortR=START, auto=false, busy=false;
   var readEl=document.getElementById('stRead'), climbBtn=document.getElementById('stClimb'), jumpBtn=document.getElementById('stJump');
+  var tx=CX+TARGET*Math.cos(TH), ty=CY+TARGET*Math.sin(TH);
 
-  var midY=((sy(0)+sy(N))/2).toFixed(0);
   var h='';
-  h+='<line x1="'+L+'" y1="'+sy(N)+'" x2="'+L+'" y2="'+BASE+'" stroke="var(--hair-2)" stroke-width="1"/>';
-  h+='<text transform="rotate(-90 16 '+midY+')" x="16" y="'+midY+'" text-anchor="middle" fill="var(--muted)" font-size="10" style="font-family:var(--mono)">曝露の強度 →</text>';
-  h+='<line x1="'+L+'" y1="'+sy(N)+'" x2="'+(sx(N)+TREAD)+'" y2="'+sy(N)+'" stroke="#e05555" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>';
-  h+='<text id="stRealLbl" x="'+(sx(N)+TREAD)+'" y="'+(sy(N)-8)+'" text-anchor="end" fill="#e05555" font-size="11" style="font-family:var(--mono)">実際のアクション（そのままだと強すぎる）</text>';
-  h+='<path d="'+outline(0,N)+'" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".5"/>';
-  h+='<path id="stDone" d="" fill="none" stroke="var(--c)" stroke-width="3" stroke-linejoin="round"/>';
-  h+='<circle id="stYou" r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/>';
-  h+='<text x="'+sx(0)+'" y="'+(BASE+20)+'" fill="var(--c)" font-size="10.5" style="font-family:var(--mono)">コンフォート</text>';
-  h+='<text x="'+((sx(1)+sx(N))/2).toFixed(0)+'" y="'+(BASE+20)+'" text-anchor="middle" fill="var(--faint)" font-size="10.5" style="font-family:var(--mono)">各段＝想像での曝露（徐々に実地へ）→</text>';
-  h+='<g id="stJumpLayer" style="display:none"></g>';
+  h+='<circle cx="'+CX+'" cy="'+CY+'" r="'+DANGER+'" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>';
+  h+='<text x="'+CX+'" y="'+(CY-DANGER+16)+'" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.12em">DANGER</text>';
+  h+='<circle id="stComfort" cx="'+CX+'" cy="'+CY+'" r="'+START+'" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5"/>';
+  h+='<circle id="stTring" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="8" fill="none" stroke="#e05555" stroke-width="2"/>';
+  h+='<circle id="stTdot" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="2.6" fill="#e05555"/>';
+  h+='<text id="stTargetLbl" x="'+tx.toFixed(1)+'" y="'+(ty-14).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
+  h+='<g id="stYou"><circle r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/><text class="han" x="0" y="-11" text-anchor="middle" fill="var(--h)" font-size="12" style="font-family:var(--serif);opacity:0">馴化</text></g>';
+  h+='<g id="stFx" style="display:none"></g>';
+  h+='<text x="'+(CX-DANGER+2)+'" y="'+(CY+DANGER-3)+'" fill="var(--muted)" font-size="10" style="font-family:var(--mono)">● コンフォート</text>';
   svg.innerHTML=h;
 
-  var doneP=svg.querySelector('#stDone'), you=svg.querySelector('#stYou'), jumpLayer=svg.querySelector('#stJumpLayer'), realLbl=svg.querySelector('#stRealLbl');
-  function place(){ doneP.setAttribute('d',outline(0,cur)); you.setAttribute('cx',(sx(cur)+TREAD*0.5).toFixed(1)); you.setAttribute('cy',(sy(cur)-8).toFixed(1)); you.setAttribute('fill', cur>=N?'#74b85d':'var(--amber)'); }
-  function realReset(){ realLbl.setAttribute('fill','#e05555'); realLbl.textContent='実際のアクション（そのままだと強すぎる）'; }
-  function realWin(){ realLbl.setAttribute('fill','#74b85d'); realLbl.textContent='実際のアクション（もう"ちょうどいい"）'; }
-  function setBtn(){ climbBtn.textContent = auto ? '⏸ 止める' : '▶ 想像で一段ずつ上る'; }
-  function stopAuto(){ auto=false; if(timer){ clearInterval(timer); timer=null; } setBtn(); }
-  function climbOne(){
-    if(cur<N){ cur++; place();
-      if(cur>=N){ readEl.textContent='実地でOK ✓ ── 想像の階段で、実際のアクションに届いた。'; realWin(); stopAuto(); }
-      else readEl.textContent='想像で一段。コンフォートが上がり、次が"ちょうどいい"に。';
-    } else stopAuto();
+  var comfort=svg.querySelector('#stComfort'), youG=svg.querySelector('#stYou'), han=youG.querySelector('.han'),
+      tring=svg.querySelector('#stTring'), tdot=svg.querySelector('#stTdot'), tLbl=svg.querySelector('#stTargetLbl'), fx=svg.querySelector('#stFx');
+  function drawC(){ comfort.setAttribute('r', comfortR.toFixed(1)); }
+  function placeYou(r){ youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
+  function reached(){ return comfortR>=TARGET-4; }
+  function win(){ tring.setAttribute('stroke','#74b85d'); tdot.setAttribute('fill','#74b85d'); tLbl.setAttribute('fill','#74b85d'); tLbl.textContent='実際のアクション（届いた ✓）'; }
+  function resetTgt(){ tring.setAttribute('stroke','#e05555'); tdot.setAttribute('fill','#e05555'); tLbl.setAttribute('fill','#e05555'); tLbl.textContent='実際のアクション'; }
+  function setBtn(){ climbBtn.textContent = auto ? '⏸ 止める' : '▶ 想像で近づく'; }
+  function stopAuto(){ auto=false; setBtn(); }
+  drawC(); placeYou(comfortR); setBtn();
+
+  function imagineOne(done){
+    if(reached()){ win(); readEl.textContent='実地でOK ✓ ── コンフォートが実際のアクションまで届いた。'; if(done)done(); return; }
+    if(busy){ if(done)done(); return; }
+    busy=true;
+    if(reduce){ comfortR=Math.min(TARGET,comfortR+STEP); drawC(); placeYou(comfortR);
+      if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝コンフォートが実際のアクションへ近づく。';
+      busy=false; if(done)done(); return; }
+    placeYou(comfortR+14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
+    setTimeout(function(){ placeYou(comfortR); readEl.textContent='② 戻って回復'; },560);
+    setTimeout(function(){ readEl.textContent='③ 休んで回復…'; },1100);
+    setTimeout(function(){ comfortR=Math.min(TARGET,comfortR+STEP); drawC(); placeYou(comfortR); han.style.opacity='1'; readEl.textContent='④ 馴化＝コンフォートが実際のアクションへ近づく'; },1720);
+    setTimeout(function(){ han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 実際のアクションまで届いた。'; } if(done)done(); },2400);
   }
-  function startAuto(){ if(cur>=N){ cur=1; realReset(); place(); } auto=true; setBtn(); timer=setInterval(climbOne,900); }
-  climbBtn.addEventListener('click',function(){ auto ? stopAuto() : startAuto(); });
+  function tick(){ if(!auto) return; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; stopAuto(); return; } imagineOne(function(){ if(auto) setTimeout(tick,240); }); }
+  climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ comfortR=START; drawC(); placeYou(comfortR); resetTgt(); } auto=true; setBtn(); tick(); });
   jumpBtn.addEventListener('click',function(){
-    stopAuto(); if(busy) return;
-    if(N-cur<=1){ cur=N; place(); realWin(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
-    busy=true; readEl.textContent='いきなり実地へジャンプ → 飛びすぎて感作・逆効果。';
-    var x0=(sx(cur)+TREAD*0.5), y0=sy(cur)-8, x1=(sx(N)+TREAD*0.4), y1=sy(N)-26;
-    jumpLayer.innerHTML='<path d="M '+x0.toFixed(1)+' '+y0.toFixed(1)+' Q '+((x0+x1)/2).toFixed(1)+' '+(y1-30).toFixed(1)+' '+x1.toFixed(1)+' '+y1.toFixed(1)+'" fill="none" stroke="#e05555" stroke-width="2" stroke-dasharray="5 4"/>'+
-      '<circle cx="'+x1.toFixed(1)+'" cy="'+y1.toFixed(1)+'" r="4" fill="#e05555"/>'+
-      '<text x="'+x1.toFixed(1)+'" y="'+(y1-8).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
-    jumpLayer.style.display='';
-    setTimeout(function(){ if(cur>1){ cur--; place(); } },700);
-    setTimeout(function(){ jumpLayer.style.display='none'; busy=false; readEl.textContent='一段下がった。やはり想像の階段で、一段ずつ。'; },1600);
+    if(auto) stopAuto(); if(busy) return;
+    if(TARGET-comfortR<=STEP*1.1){ comfortR=TARGET; drawC(); placeYou(comfortR); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
+    busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。';
+    placeYou(TARGET);
+    fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
+    fx.style.display='';
+    setTimeout(function(){ comfortR=Math.max(START-8,comfortR-8); drawC(); placeYou(comfortR); },700);
+    setTimeout(function(){ fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
   });
-  setBtn(); place();
 })();
 </script>
 
