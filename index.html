@@ -223,6 +223,7 @@
   .st-btn.ghost:hover { background:rgba(212,165,116,.06); }
   .st-read { font-family:var(--mono); font-size:12.5px; color:var(--ink-soft); min-height:22px; margin-top:12px; line-height:1.55; }
   #stYou { transition: transform .5s cubic-bezier(.4,0,.2,1); }
+  #stYou.hot circle { filter: drop-shadow(0 0 7px var(--amber)); }
   #stYou .han { transition: opacity .3s ease; }
   #stComfort { transition: r .5s cubic-bezier(.4,0,.2,1), fill .3s ease; }
   #stTring, #stTdot, #stTargetLbl { transition: stroke .3s ease, fill .3s ease; }
@@ -1105,7 +1106,15 @@
     for(var i=0;i<N;i++){ var m=mid(P[i],P[(i+1)%N]); d+=' Q '+P[i][0].toFixed(1)+' '+P[i][1].toFixed(1)+' '+m[0].toFixed(1)+' '+m[1].toFixed(1); }
     return d+' Z'; }
   function drawC(){ comfort.setAttribute('d', blobPath()); }
-  function bump(sign){ for(var j=0;j<N;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],TH)/SIGMA,2)); radii[j]=Math.max(FLOORR, Math.min(TARGET, radii[j]+sign*STEP*g)); } }
+  function bumpTarget(sign){ var t=radii.slice(); for(var j=0;j<N;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],TH)/SIGMA,2)); t[j]=Math.max(FLOORR, Math.min(TARGET, radii[j]+sign*STEP*g)); } return t; }
+  function tweenTo(target,dur){
+    if(reduce||!dur){ for(var j=0;j<N;j++) radii[j]=target[j]; drawC(); placeYou(0); return; }
+    var s0=radii.slice(), t0=null, done=false;
+    function fr(ts){ if(done) return; if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur);
+      for(var j=0;j<N;j++) radii[j]=s0[j]+(target[j]-s0[j])*f; drawC(); placeYou(0); if(f<1) requestAnimationFrame(fr); else done=true; }
+    requestAnimationFrame(fr);
+    setTimeout(function(){ if(!done){ done=true; for(var j=0;j<N;j++) radii[j]=target[j]; drawC(); placeYou(0); } }, dur+150);
+  }
   function placeYou(extra){ var r=radiusAt(TH)+(extra||0); youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
   function reached(){ return radiusAt(TH)>=TARGET-4; }
   function win(){ tring.setAttribute('stroke','#74b85d'); tdot.setAttribute('fill','#74b85d'); tLbl.setAttribute('fill','#74b85d'); tLbl.textContent='実際のアクション（届いた ✓）'; }
@@ -1118,26 +1127,26 @@
     if(reached()){ win(); readEl.textContent='実地でOK ✓ ── コンフォートが標的方向へ届いた。'; if(done)done(); return; }
     if(busy){ if(done)done(); return; }
     busy=true;
-    if(reduce){ bump(1); drawC(); placeYou(0);
+    if(reduce){ tweenTo(bumpTarget(1),0);
       if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝標的の方向へコンフォートが伸びる。';
       busy=false; if(done)done(); return; }
-    placeYou(14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
+    youG.classList.add('hot'); placeYou(14); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
     setTimeout(function(){ placeYou(0); readEl.textContent='② 戻って回復'; },560);
     setTimeout(function(){ readEl.textContent='③ 休んで回復…'; },1100);
-    setTimeout(function(){ bump(1); drawC(); placeYou(0); han.style.opacity='1'; readEl.textContent='④ 馴化＝標的の方向へコンフォートが伸びる'; },1720);
-    setTimeout(function(){ han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 標的方向へ届いた。'; } if(done)done(); },2400);
+    setTimeout(function(){ tweenTo(bumpTarget(1),520); han.style.opacity='1'; readEl.textContent='④ 馴化＝標的の方向へコンフォートが伸びる'; },1720);
+    setTimeout(function(){ youG.classList.remove('hot'); han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 標的方向へ届いた。'; } if(done)done(); },2400);
   }
   function tick(){ if(!auto) return; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; stopAuto(); return; } imagineOne(function(){ if(auto) setTimeout(tick,240); }); }
   climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ for(var j=0;j<N;j++) radii[j]=START; drawC(); placeYou(0); resetTgt(); } auto=true; setBtn(); tick(); });
   jumpBtn.addEventListener('click',function(){
     if(auto) stopAuto(); if(busy) return;
-    if(TARGET-radiusAt(TH)<=STEP*1.1){ bump(1); drawC(); placeYou(0); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
+    if(TARGET-radiusAt(TH)<=STEP*1.1){ tweenTo(bumpTarget(1),320); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
     busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。';
-    placeYou(TARGET-radiusAt(TH));
+    youG.classList.add('hot'); placeYou(TARGET-radiusAt(TH));
     fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
     fx.style.display='';
-    setTimeout(function(){ bump(-1); drawC(); placeYou(0); },700);
-    setTimeout(function(){ fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
+    setTimeout(function(){ tweenTo(bumpTarget(-1),420); },700);
+    setTimeout(function(){ youG.classList.remove('hot'); fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
   });
 })();
 </script>
