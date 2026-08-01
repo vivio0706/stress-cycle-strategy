@@ -214,7 +214,7 @@
   .hz-zone { font-family:var(--serif); font-size:clamp(20px,3.6vw,27px); transition:color .2s ease; }
   .hz-note { font-family:var(--mono); font-size:12px; color:var(--muted); }
   .hz-hint { font-family:var(--mono); font-size:10px; letter-spacing:.05em; color:var(--faint); margin-top:12px; }
-  .st { max-width:720px; }
+  .st { max-width:760px; }
   .st-fig svg { width:100%; height:auto; display:block; }
   .st-ctl { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .st-btn { padding:12px 18px; border-radius:8px; cursor:pointer; background:transparent; border:1px solid var(--amber); color:var(--amber); font-family:var(--sans); font-size:14px; transition:background .15s ease; }
@@ -227,9 +227,11 @@
   #stYou .han { transition: opacity .3s ease; }
   #stComfort { transition: r .5s cubic-bezier(.4,0,.2,1), fill .3s ease; }
   #stTring, #stTdot, #stTargetLbl { transition: stroke .3s ease, fill .3s ease; }
-  .st-grid { display:grid; grid-template-columns:minmax(0,290px) 1fr; gap:clamp(20px,4vw,44px); align-items:center; }
-  .st-side .st-ctl { margin-top:0; }
-  @media (max-width:640px){ .st-grid { grid-template-columns:1fr; } .st-grid .st-fig { max-width:300px; margin:0 auto; } }
+  .st-figs { display:grid; grid-template-columns:1fr 1fr; gap:clamp(14px,3vw,26px); align-items:start; }
+  .st-cap { font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--muted); text-align:center; margin-bottom:6px; }
+  #stStairYou { transition: transform .5s cubic-bezier(.4,0,.2,1); }
+  #stStairYou.hot circle { filter: drop-shadow(0 0 7px var(--amber)); }
+  @media (max-width:620px){ .st-figs { grid-template-columns:1fr; gap:20px; } .st-fig { max-width:320px; margin:0 auto; } }
 
   @media (max-width:760px) { .cz-stage { grid-template-columns:1fr; gap:16px; } .cz-fig { max-width:320px; margin:0 auto; } }
 
@@ -534,17 +536,22 @@
     <p class="sec-eye">06 · The Staircase</p>
     <h2>遠すぎる時は、<em>想像</em>で近づく</h2>
     <p class="sec-lead">ちょうどいい強度で実地に触れられるなら、そうすればいい。だが実際のアクションはコンフォートゾーンから離れすぎていて、直接やると<b>感作</b>する。<b>シミュレート・想像</b>なら強度を落として"ちょうどいい"に置ける ── その一歩ずつでコンフォートを実地まで近づける。</p>
-    <div class="st st-grid">
-      <div class="st-fig">
-        <svg id="stSvg" viewBox="0 0 360 340" role="img" aria-label="コンフォートゾーンから遠い実際のアクションへ、想像での曝露を繰り返してコンフォートを近づける図"></svg>
-      </div>
-      <div class="st-side">
-        <div class="st-ctl">
-          <button class="st-btn" id="stClimb">▶ 想像で近づく</button>
-          <button class="st-btn ghost" id="stJump">直接やってみる</button>
+    <div class="st">
+      <div class="st-figs">
+        <div class="st-fig">
+          <div class="st-cap">想像の階段</div>
+          <svg id="stStairs" viewBox="0 0 360 340" role="img" aria-label="想像での曝露を一段ずつ上って実際のアクションへ届く階段"></svg>
         </div>
-        <div class="st-read" id="stRead">実際のアクションは遠すぎて、直接だと感作する。想像で少しずつ近づく。</div>
+        <div class="st-fig">
+          <div class="st-cap">コンフォートゾーン</div>
+          <svg id="stSvg" viewBox="0 0 360 340" role="img" aria-label="想像での曝露でコンフォートを実際のアクションへ広げる図"></svg>
+        </div>
       </div>
+      <div class="st-ctl">
+        <button class="st-btn" id="stClimb">▶ 想像で近づく</button>
+        <button class="st-btn ghost" id="stJump">直接やってみる</button>
+      </div>
+      <div class="st-read" id="stRead">実際のアクションは遠すぎて、直接だと感作する。想像で少しずつ、2つの図が同時に進む。</div>
     </div>
   </section>
 
@@ -1072,80 +1079,107 @@
   update(0.35);
 })();
 
-/* ---- Reaching a distant real action: the comfort zone (a circle) grows until it includes the action; direct jump = sensitization ---- */
+/* ---- Two synced views of the same idea: imagination staircase + comfort zone, advancing together ---- */
 (function(){
-  var svg=document.getElementById('stSvg'); if(!svg) return;
+  var cSvg=document.getElementById('stSvg'), sSvg=document.getElementById('stStairs');
+  if(!cSvg||!sSvg) return;
   var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var CX=175, CY=165, DANGER=140, TARGET=120, START=42, STEP=13, TH=0;
-  var comfortR=START, auto=false, busy=false;
   var readEl=document.getElementById('stRead'), climbBtn=document.getElementById('stClimb'), jumpBtn=document.getElementById('stJump');
-  var tx=CX+TARGET*Math.cos(TH), ty=CY+TARGET*Math.sin(TH);
+  var N=7, cur=0, auto=false, busy=false;
 
-  var N=32, SIGMA=0.72, FLOORR=34, ANG0=-Math.PI/2, DSTEP=2*Math.PI/N;
-  var ANG=[], radii=[]; for(var j=0;j<N;j++){ ANG.push(ANG0+j*DSTEP); radii.push(START); }
-
-  var h='';
-  h+='<circle cx="'+CX+'" cy="'+CY+'" r="'+DANGER+'" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>';
-  h+='<text x="'+CX+'" y="'+(CY-DANGER+16)+'" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.12em">DANGER</text>';
-  h+='<path id="stComfort" d="" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5" stroke-linejoin="round"/>';
-  h+='<circle id="stTring" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="8" fill="none" stroke="#e05555" stroke-width="2"/>';
-  h+='<circle id="stTdot" cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="2.6" fill="#e05555"/>';
-  h+='<text id="stTargetLbl" x="'+tx.toFixed(1)+'" y="'+(ty-14).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
-  h+='<g id="stYou"><circle r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/><text class="han" x="0" y="-11" text-anchor="middle" fill="var(--h)" font-size="12" style="font-family:var(--serif);opacity:0">馴化</text></g>';
-  h+='<g id="stFx" style="display:none"></g>';
-  svg.innerHTML=h;
-
-  var comfort=svg.querySelector('#stComfort'), youG=svg.querySelector('#stYou'), han=youG.querySelector('.han'),
-      tring=svg.querySelector('#stTring'), tdot=svg.querySelector('#stTdot'), tLbl=svg.querySelector('#stTargetLbl'), fx=svg.querySelector('#stFx');
+  /* ===== comfort zone ===== */
+  var CX=175, CY=165, DANGER=140, TARGET=120, START=42, NA=32, SIGMA=0.72, ANG0=-Math.PI/2, DSTEP=2*Math.PI/NA;
+  var ANG=[], radii=[]; for(var j=0;j<NA;j++){ ANG.push(ANG0+j*DSTEP); radii.push(START); }
+  var tx=CX+TARGET, ty=CY;
+  var ch='';
+  ch+='<circle cx="'+CX+'" cy="'+CY+'" r="'+DANGER+'" fill="rgba(224,85,85,.05)" stroke="rgba(224,85,85,.30)" stroke-width="1" stroke-dasharray="4 5"/>';
+  ch+='<text x="'+CX+'" y="'+(CY-DANGER+16)+'" text-anchor="middle" fill="rgba(224,85,85,.85)" font-size="10" style="font-family:var(--mono);letter-spacing:.12em">DANGER</text>';
+  ch+='<path id="stComfort" d="" fill="rgba(78,163,160,.15)" stroke="rgba(78,163,160,.7)" stroke-width="1.5" stroke-linejoin="round"/>';
+  ch+='<circle id="stTring" cx="'+tx+'" cy="'+ty+'" r="8" fill="none" stroke="#e05555" stroke-width="2"/>';
+  ch+='<circle id="stTdot" cx="'+tx+'" cy="'+ty+'" r="2.6" fill="#e05555"/>';
+  ch+='<text id="stTargetLbl" x="'+tx+'" y="'+(ty-14)+'" text-anchor="middle" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
+  ch+='<g id="stYou"><circle r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/><text class="han" x="0" y="-11" text-anchor="middle" fill="var(--h)" font-size="12" style="font-family:var(--serif);opacity:0">馴化</text></g>';
+  ch+='<g id="stFx" style="display:none"></g>';
+  cSvg.innerHTML=ch;
+  var cComfort=cSvg.querySelector('#stComfort'), cMk=cSvg.querySelector('#stYou'), cHan=cMk.querySelector('.han'),
+      cTring=cSvg.querySelector('#stTring'), cTdot=cSvg.querySelector('#stTdot'), cTlbl=cSvg.querySelector('#stTargetLbl'), cFx=cSvg.querySelector('#stFx');
   function angDiff(a,b){ var d=Math.abs(a-b)%(2*Math.PI); return d>Math.PI?2*Math.PI-d:d; }
-  function radiusAt(dr){ var idx=(dr-ANG0)/DSTEP; idx=((idx%N)+N)%N; var j0=Math.floor(idx)%N, j1=(j0+1)%N, f=idx-Math.floor(idx); return radii[j0]*(1-f)+radii[j1]*f; }
-  function blobPath(){ var P=[]; for(var j=0;j<N;j++) P.push([CX+radii[j]*Math.cos(ANG[j]), CY+radii[j]*Math.sin(ANG[j])]);
+  function radiusFront(){ return radii[Math.round((0-ANG0)/DSTEP)%NA]; }
+  function blobPath(){ var P=[]; for(var j=0;j<NA;j++) P.push([CX+radii[j]*Math.cos(ANG[j]), CY+radii[j]*Math.sin(ANG[j])]);
     function mid(a,b){ return [(a[0]+b[0])/2,(a[1]+b[1])/2]; }
-    var m0=mid(P[N-1],P[0]), d='M '+m0[0].toFixed(1)+' '+m0[1].toFixed(1);
-    for(var i=0;i<N;i++){ var m=mid(P[i],P[(i+1)%N]); d+=' Q '+P[i][0].toFixed(1)+' '+P[i][1].toFixed(1)+' '+m[0].toFixed(1)+' '+m[1].toFixed(1); }
+    var m0=mid(P[NA-1],P[0]), d='M '+m0[0].toFixed(1)+' '+m0[1].toFixed(1);
+    for(var i=0;i<NA;i++){ var m=mid(P[i],P[(i+1)%NA]); d+=' Q '+P[i][0].toFixed(1)+' '+P[i][1].toFixed(1)+' '+m[0].toFixed(1)+' '+m[1].toFixed(1); }
     return d+' Z'; }
-  function drawC(){ comfort.setAttribute('d', blobPath()); }
-  function bumpTarget(sign){ var t=radii.slice(); for(var j=0;j<N;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],TH)/SIGMA,2)); t[j]=Math.max(FLOORR, Math.min(TARGET, radii[j]+sign*STEP*g)); } return t; }
-  function tweenTo(target,dur){
-    if(reduce||!dur){ for(var j=0;j<N;j++) radii[j]=target[j]; drawC(); placeYou(0); return; }
+  function cDraw(){ cComfort.setAttribute('d', blobPath()); }
+  function cTargetRadii(step){ var frac=Math.max(0,Math.min(1,step/N)), t=[]; for(var j=0;j<NA;j++){ var g=Math.exp(-Math.pow(angDiff(ANG[j],0)/SIGMA,2)); t[j]=START+(TARGET-START)*frac*g; } return t; }
+  function cPlaceYou(r){ r=r||0; cMk.style.transform='translate('+(CX+r).toFixed(1)+'px,'+CY+'px)'; }
+  function cWin(){ cTring.setAttribute('stroke','#74b85d'); cTdot.setAttribute('fill','#74b85d'); cTlbl.setAttribute('fill','#74b85d'); cTlbl.textContent='実際のアクション（届いた ✓）'; }
+  function cResetTgt(){ cTring.setAttribute('stroke','#e05555'); cTdot.setAttribute('fill','#e05555'); cTlbl.setAttribute('fill','#e05555'); cTlbl.textContent='実際のアクション'; }
+  function cTween(target,dur){ if(reduce||!dur){ for(var j=0;j<NA;j++) radii[j]=target[j]; cDraw(); cPlaceYou(0); return; }
     var s0=radii.slice(), t0=null, done=false;
-    function fr(ts){ if(done) return; if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur);
-      for(var j=0;j<N;j++) radii[j]=s0[j]+(target[j]-s0[j])*f; drawC(); placeYou(0); if(f<1) requestAnimationFrame(fr); else done=true; }
+    function fr(ts){ if(done)return; if(t0===null)t0=ts; var f=Math.min(1,(ts-t0)/dur); for(var j=0;j<NA;j++) radii[j]=s0[j]+(target[j]-s0[j])*f; cDraw(); cPlaceYou(0); if(f<1) requestAnimationFrame(fr); else done=true; }
     requestAnimationFrame(fr);
-    setTimeout(function(){ if(!done){ done=true; for(var j=0;j<N;j++) radii[j]=target[j]; drawC(); placeYou(0); } }, dur+150);
-  }
-  function placeYou(r){ r=r||0; youG.style.transform='translate('+(CX+r*Math.cos(TH)).toFixed(1)+'px,'+(CY+r*Math.sin(TH)).toFixed(1)+'px)'; }
-  function reached(){ return radiusAt(TH)>=TARGET-4; }
-  function win(){ tring.setAttribute('stroke','#74b85d'); tdot.setAttribute('fill','#74b85d'); tLbl.setAttribute('fill','#74b85d'); tLbl.textContent='実際のアクション（届いた ✓）'; }
-  function resetTgt(){ tring.setAttribute('stroke','#e05555'); tdot.setAttribute('fill','#e05555'); tLbl.setAttribute('fill','#e05555'); tLbl.textContent='実際のアクション'; }
+    setTimeout(function(){ if(!done){ done=true; for(var j=0;j<NA;j++) radii[j]=target[j]; cDraw(); cPlaceYou(0); } }, dur+150); }
+  cDraw(); cPlaceYou(0);
+
+  /* ===== staircase ===== */
+  var sL=44, sTR=37, sBASE=286, sRISE=29;
+  function sx(i){ return sL+i*sTR; }
+  function sy(i){ return sBASE-i*sRISE; }
+  function outline(a,b){ var d='M '+sx(a)+' '+sy(a); for(var i=a+1;i<=b;i++){ d+=' L '+sx(i).toFixed(1)+' '+sy(i-1).toFixed(1)+' L '+sx(i).toFixed(1)+' '+sy(i).toFixed(1); } return d; }
+  var sh='';
+  sh+='<line x1="'+sL+'" y1="'+sy(N)+'" x2="'+sL+'" y2="'+sBASE+'" stroke="var(--hair-2)" stroke-width="1"/>';
+  sh+='<line x1="'+sL+'" y1="'+sy(N)+'" x2="'+(sx(N)+sTR)+'" y2="'+sy(N)+'" stroke="#e05555" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>';
+  sh+='<text id="stRealLbl" x="'+(sx(N)+sTR)+'" y="'+(sy(N)-8)+'" text-anchor="end" fill="#e05555" font-size="10.5" style="font-family:var(--mono)">実際のアクション</text>';
+  sh+='<path d="'+outline(0,N)+'" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="3 4" opacity=".5"/>';
+  sh+='<path id="stDone" d="" fill="none" stroke="var(--c)" stroke-width="3" stroke-linejoin="round"/>';
+  sh+='<g id="stStairYou"><circle r="6" fill="var(--amber)" stroke="#0a0d11" stroke-width="2"/></g>';
+  sh+='<text x="'+((sx(1)+sx(N))/2).toFixed(0)+'" y="'+(sBASE+22)+'" text-anchor="middle" fill="var(--faint)" font-size="10" style="font-family:var(--mono)">各段＝想像での曝露 →</text>';
+  sh+='<g id="stFx2" style="display:none"></g>';
+  sSvg.innerHTML=sh;
+  var sDone=sSvg.querySelector('#stDone'), sMk=sSvg.querySelector('#stStairYou'), sLbl=sSvg.querySelector('#stRealLbl'), sFx=sSvg.querySelector('#stFx2');
+  function sDrawTo(step){ sDone.setAttribute('d', outline(0,Math.max(0,step))); }
+  function sPlace(step){ step=Math.max(0,step); sMk.style.transform='translate('+(sx(step)+sTR*0.5).toFixed(1)+'px,'+(sy(step)-8).toFixed(1)+'px)'; }
+  function sWin(){ sLbl.setAttribute('fill','#74b85d'); sLbl.textContent='実際のアクション（届いた ✓）'; }
+  function sResetLbl(){ sLbl.setAttribute('fill','#e05555'); sLbl.textContent='実際のアクション'; }
+  sDrawTo(0); sPlace(0);
+
+  /* ===== shared ===== */
+  function reached(){ return cur>=N; }
+  function winBoth(){ cWin(); sWin(); }
+  function resetAll(){ cur=0; for(var j=0;j<NA;j++) radii[j]=START; cDraw(); cPlaceYou(0); cResetTgt(); sDrawTo(0); sPlace(0); sResetLbl(); }
   function setBtn(){ climbBtn.textContent = auto ? '⏸ 止める' : '▶ 想像で近づく'; }
   function stopAuto(){ auto=false; setBtn(); }
-  drawC(); placeYou(0); setBtn();
+  setBtn();
 
-  function imagineOne(done){
-    if(reached()){ win(); readEl.textContent='実地でOK ✓ ── コンフォートが標的方向へ届いた。'; if(done)done(); return; }
+  function stepBoth(done){
+    if(reached()){ winBoth(); readEl.textContent='実地でOK ✓ ── 実際のアクションに届いた。'; if(done)done(); return; }
     if(busy){ if(done)done(); return; }
     busy=true;
-    if(reduce){ tweenTo(bumpTarget(1),0);
-      if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='馴化＝標的の方向へコンフォートが伸びる。';
+    if(reduce){ cur++; cTween(cTargetRadii(cur),0); sDrawTo(cur); sPlace(cur);
+      if(reached()){ winBoth(); readEl.textContent='実地でOK ✓ ── 届いた。'; } else readEl.textContent='想像で一段：コンフォートが広がり、階段を一段。';
       busy=false; if(done)done(); return; }
-    youG.classList.add('hot'); placeYou(radiusAt(TH)+12); han.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
-    setTimeout(function(){ placeYou(0); readEl.textContent='② 戻って回復'; },560);
+    cMk.classList.add('hot'); cPlaceYou(radiusFront()+12); cHan.style.opacity='0'; readEl.textContent='① 想像で少し外へ（強度を落とした曝露）';
+    setTimeout(function(){ cPlaceYou(0); readEl.textContent='② コンフォートの中へ戻る'; },560);
     setTimeout(function(){ readEl.textContent='③ 休んで回復…'; },1100);
-    setTimeout(function(){ tweenTo(bumpTarget(1),520); han.style.opacity='1'; readEl.textContent='④ 馴化＝標的の方向へコンフォートが伸びる'; },1720);
-    setTimeout(function(){ youG.classList.remove('hot'); han.style.opacity='0'; busy=false; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 標的方向へ届いた。'; } if(done)done(); },2400);
+    setTimeout(function(){ cur++; cTween(cTargetRadii(cur),520); sDrawTo(cur); sPlace(cur); sMk.classList.add('hot'); cHan.style.opacity='1'; readEl.textContent='④ 馴化：コンフォートが広がり、階段を一段上る'; },1720);
+    setTimeout(function(){ cMk.classList.remove('hot'); sMk.classList.remove('hot'); cHan.style.opacity='0'; busy=false; if(reached()){ winBoth(); readEl.textContent='実地でOK ✓ ── 実際のアクションに届いた。'; } if(done)done(); },2400);
   }
-  function tick(){ if(!auto) return; if(reached()){ win(); readEl.textContent='実地でOK ✓ ── 届いた。'; stopAuto(); return; } imagineOne(function(){ if(auto) setTimeout(tick,240); }); }
-  climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ for(var j=0;j<N;j++) radii[j]=START; drawC(); placeYou(0); resetTgt(); } auto=true; setBtn(); tick(); });
+  function tick(){ if(!auto) return; if(reached()){ winBoth(); readEl.textContent='実地でOK ✓ ── 届いた。'; stopAuto(); return; } stepBoth(function(){ if(auto) setTimeout(tick,240); }); }
+  climbBtn.addEventListener('click',function(){ if(auto){ stopAuto(); return; } if(reached()){ resetAll(); } auto=true; setBtn(); tick(); });
   jumpBtn.addEventListener('click',function(){
     if(auto) stopAuto(); if(busy) return;
-    if(TARGET-radiusAt(TH)<=STEP*1.1){ tweenTo(bumpTarget(1),320); win(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
-    busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。';
-    youG.classList.add('hot'); placeYou(TARGET);
-    fx.innerHTML='<circle cx="'+tx.toFixed(1)+'" cy="'+ty.toFixed(1)+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx.toFixed(1)+'" y="'+(ty+30).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
-    fx.style.display='';
-    setTimeout(function(){ tweenTo(bumpTarget(-1),420); },700);
-    setTimeout(function(){ youG.classList.remove('hot'); placeYou(0); fx.style.display='none'; busy=false; readEl.textContent='むしろ縮んだ。やはり想像で少しずつ近づく。'; },1600);
+    if(N-cur<=1){ cur=N; cTween(cTargetRadii(N),320); sDrawTo(N); sPlace(N); winBoth(); readEl.textContent='もう届く距離だった → 実地でOK ✓'; return; }
+    busy=true; readEl.textContent='いきなり実際のアクションへ → 遠すぎて感作・逆効果。両方とも一段下がる。';
+    cMk.classList.add('hot'); cPlaceYou(TARGET);
+    cFx.innerHTML='<circle cx="'+tx+'" cy="'+ty+'" r="17" fill="none" stroke="#e05555" stroke-width="2" opacity=".9"/><text x="'+tx+'" y="'+(ty+30)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
+    cFx.style.display='';
+    sMk.classList.add('hot'); sPlace(N);
+    var jx=(sx(N)+sTR*0.4), jy=sy(N)-24;
+    sFx.innerHTML='<circle cx="'+jx.toFixed(1)+'" cy="'+jy.toFixed(1)+'" r="4" fill="#e05555"/><text x="'+jx.toFixed(1)+'" y="'+(jy-8).toFixed(1)+'" text-anchor="middle" fill="#e05555" font-size="13" style="font-family:var(--serif)">感作</text>';
+    sFx.style.display='';
+    setTimeout(function(){ cur=Math.max(0,cur-1); cTween(cTargetRadii(cur),420); sDrawTo(cur); sPlace(cur); },700);
+    setTimeout(function(){ cMk.classList.remove('hot'); sMk.classList.remove('hot'); cPlaceYou(0); cFx.style.display='none'; sFx.style.display='none'; busy=false; readEl.textContent='一段下がった。やはり想像で少しずつ。'; },1600);
   });
 })();
 </script>
